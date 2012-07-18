@@ -11,8 +11,21 @@
             arb:                true,
             name:               'quest',
             levelData: [
-               [{x: 10, y: 10, radius: 100}, {x: 500, y: 200, radius: 500}], // LEVEL 1
-               [{x: 10, y: 10, radius: 300}, {x: 500, y: 200, radius: 400}], // LEVEL 2
+               {  // LEVEL 1
+                   spawnLocation : {x: 512, y: 800},
+                   ringData : [  
+                                  {x: 512, y: 512, diameter: 900},
+                                  {x: 100, y: 400, diameter: 190},
+                                  {x: 300, y: 600, diameter: 200},
+                                  {x: 512, y: 512, diameter: 100},
+                                  {x: 700, y: 800, diameter: 200}],
+               },
+               {  // LEVEL 2
+                   spawnLocation : {x: 512, y: 800},
+                   ringData : [
+                                  {x: 512, y: 512, diameter: 1000},
+                                  {x: 100, y: 100, diameter: 100}],
+               },
             ]
                         
         },
@@ -23,6 +36,39 @@
             name:               'pwn'
         }
     }
+})();
+
+// EVENT SOURCES
+(function() {
+    FNT.EventSources = {
+    	LEVEL:         "event_source_level",
+    	GAME_MODEL:    "event_source_game_model"
+    }
+})();
+
+// PLAYERS
+(function() {
+
+    FNT.Player = function() {
+        this.position = new CAAT.Point(0, 0);
+
+        return this;
+    };
+
+    FNT.Player.prototype = {
+
+        diameter:        0,
+        position:        null,
+        color:           "#F00",
+
+        create : function(x, y, diameter) {
+            this.position = new CAAT.Point(x, y);
+            this.diameter = diameter;
+            
+            return this;
+        },
+    };
+
 })();
 
 // RINGS
@@ -36,30 +82,25 @@
 
     FNT.Ring.prototype= {
 
-        radius:        0,
+        diameter:        0,
         position:      null,
         color:         null,
 
-        gamemodel:     null,
-
-        /**
-         *
-         * @param row
-         * @param column
-         * @param gamemodel the FNT.GameModel instance
-         */
-        create : function(x, y, radius, gamemodel) {
-
+        create : function(x, y, diameter) {
             this.position = new CAAT.Point(x, y);
-            this.radius = radius;
-
-            this.color = (Math.random() * context.getNumberColors())>>0;
-            this.gamemodel = gamemodel;
+            this.diameter = diameter;
             
             return this;
         },
     };
 
+})();
+
+// LEVEL EVENTS
+(function() {
+    FNT.LevelEvents = {
+    	LOAD:         "level_events_load"
+    }
 })();
 
 // LEVEL
@@ -68,22 +109,36 @@
         this.rings = []
         return this;
     };
-
+    
     FNT.Level.prototype = {
         rings:        null,
+        gameModel:    null,
 
-        create : function( levelData, gamemodel ) {
-            var ringData = null;
-            for (var i = 0; i < levelData.length; i++) {
-                ringData = levelData[i];
+        create : function( ringData, gameModel ) {
+        	this.gameModel = gameModel;
+        	
+            var currentRing = null;
+            for (var i = 0; i < ringData.length; i++) {
+                currentRing = ringData[i];
 
-                var ring = new FNT.Ring().create(ringData.x, ringData.y, ringData.color, gamemodel);
+                var ring = new FNT.Ring().create(currentRing.x, currentRing.y, currentRing.diameter);
 
                 this.rings.push(ring);
             }
+            
+            this.gameModel.fireEvent(FNT.EventSources.LEVEL, FNT.LevelEvents.LOAD, this);
         },
+        
+        getRings : function () { return this.rings },
     };
 
+})();
+
+// GAME MODEL EVENTS
+(function() {
+    FNT.GameModelEvents = {
+    	UPDATE_STATUS:         "game_model_events_update_status"
+    }
 })();
 
 /* GAME MODEL */
@@ -101,6 +156,7 @@
         gameMode:           null,
 
         level:              null,
+        player:             null,
         currentLevelIndex:  0,
 
         ST_STARTGAME:       5,
@@ -116,6 +172,8 @@
          * @return nothing.
          */
         create : function() {
+            this.player = new FNT.Player().create()
+            
             return this;
         },
         
@@ -126,15 +184,19 @@
             
             this.setStatus( this.ST_STARTGAME );
             this.loadLevel(0);
+            
+            this.spawnPlayer();
         },
 
         loadLevel : function(levelIndex) {
-            this.level = new FNT.Level();
-            this.level.create(levelData[levelIndex], this);
-
-            this.fireEvent(FNT.Level.LEVEL_EVENT, FNT.Level.LOAD_LEVEL, this.level);
+            var ringData = FNT.GameModes.quest.levelData[levelIndex].ringData;
+            this.level = new FNT.Level().create(ringData, this);
 
             this.setStatus( this.ST_INITIALIZING );
+        },
+        
+        spawnPlayer : function() {
+            
         },
 
         /**
@@ -161,7 +223,7 @@
         
         setStatus : function( status ) {
             this.status= status;
-            this.fireEvent( 'context', 'status', this.status );
+            this.fireEvent( FNT.EventSources.GAME_MODEL, FNT.GameModelEvents.UPDATE_STATUS, this.status );
         },
 
         timeUp : function() {

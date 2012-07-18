@@ -68,9 +68,10 @@ function createCanvas() {
     var director;
 
     if ( window.innerWidth>window.innerHeight ) {
-        director= new CAAT.Director().initialize(700,500).setClear( false );
+        director = new CAAT.Director().initialize(1024,1024).setClear( false );
     } else {
-        director= new CAAT.Director().initialize(500,750).setClear(false);
+        alert("DOING SOMETHING UNEXPECTED!");
+        director = new CAAT.Director().initialize(500,750).setClear(false);
     }
 
     return director;
