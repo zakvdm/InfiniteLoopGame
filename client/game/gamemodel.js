@@ -8,8 +8,8 @@
 (function() {
     FNT.GameModes = {
         quest:  {
-            arb:                true
-            name:               'quest'
+            arb:                true,
+            name:               'quest',
             levelData: [
                [{x: 10, y: 10, radius: 100}, {x: 500, y: 200, radius: 500}], // LEVEL 1
                [{x: 10, y: 10, radius: 300}, {x: 500, y: 200, radius: 400}], // LEVEL 2
@@ -40,21 +40,23 @@
         position:      null,
         color:         null,
 
-        context:       null,
+        gamemodel:     null,
 
         /**
          *
          * @param row
          * @param column
-         * @param context the FNT.Context instance
+         * @param gamemodel the FNT.GameModel instance
          */
-        initialize : function(x, y, radius, context) {
+        create : function(x, y, radius, gamemodel) {
 
             this.position = new CAAT.Point(x, y);
             this.radius = radius;
 
             this.color = (Math.random() * context.getNumberColors())>>0;
-            this.context = context;
+            this.gamemodel = gamemodel;
+            
+            return this;
         },
     };
 
@@ -70,13 +72,12 @@
     FNT.Level.prototype = {
         rings:        null,
 
-        create : function( levelData, context ) {
+        create : function( levelData, gamemodel ) {
             var ringData = null;
             for (var i = 0; i < levelData.length; i++) {
                 ringData = levelData[i];
 
-                var ring = new FNT.Ring();
-                ring.initialize(ringData.x, ringData.y, ringData.color, context);
+                var ring = new FNT.Ring().create(ringData.x, ringData.y, ringData.color, gamemodel);
 
                 this.rings.push(ring);
             }
@@ -88,12 +89,12 @@
 /* GAME MODEL */
 (function() {
 
-    FNT.Context= function() {
+    FNT.GameModel= function() {
         this.eventListener= [];
         return this;
     };
 
-    FNT.Context.prototype= {
+    FNT.GameModel.prototype= {
 
         eventListener:      null,   // context listeners
 
@@ -117,33 +118,27 @@
         create : function() {
             return this;
         },
-        setGameMode : function(gameMode) {
+        
+        startGame : function(gameMode) {
             if (gameMode != this.gameMode ) {
                 this.gameMode = gameMode;
             }
-
-            this.initialize();
-        },
-
-        initialize : function() {
+            
             this.setStatus( this.ST_STARTGAME );
             this.loadLevel(0);
-            return this;
         },
 
         loadLevel : function(levelIndex) {
             this.level = new FNT.Level();
             this.level.create(levelData[levelIndex], this);
 
-            this.fireEvent('context', 'levelchange', this.level);
+            this.fireEvent(FNT.Level.LEVEL_EVENT, FNT.Level.LOAD_LEVEL, this.level);
 
             this.setStatus( this.ST_INITIALIZING );
-
-            return this;
         },
 
         /**
-         * Notify listeners of a context event
+         * Notify listeners of a gamemodel event
          * @param sSource event source object
          * @param sEvent an string indicating the event type
          * @param params an object with event parameters. Each event type will have its own parameter set.
@@ -151,7 +146,7 @@
         fireEvent : function( sSource, sEvent, params ) {
             var i;
             for (i = 0; i < this.eventListener.length; i++) {
-                this.eventListener[i].contextEvent( {
+                this.eventListener[i].handleEvent( {
                     source: sSource,
                     event:  sEvent,
                     params: params
@@ -159,7 +154,7 @@
             }
         },
 
-        addContextListener : function( listener ) {
+        addEventListener : function( listener ) {
             this.eventListener.push(listener);
             return this;
         },

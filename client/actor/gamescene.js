@@ -22,7 +22,7 @@
          * @param numberImage
          * @param brick a FNT.Brick instance.
          */
-        initialize : function( ring ) {
+        create : function( ring ) {
 
             this.setSize(100,100);
 
@@ -97,20 +97,24 @@
 
     FNT.LevelContainer.prototype= {
         ringActors:    null,
-
-        initialize : function() {
-            return this;
+        
+        create : function(gameModel) {
+        	gameModel.addEventListener(this);
+        	
+        	return this;
         },
 
-        contextEvent : function(event) {
-            if ( event.source == 'context' ) {
-                if ( event.event == 'levelchange') {
+
+        handleEvent : function(event) {
+            if ( event.source == FNT.Level.LEVEL_EVENT ) {
+                if ( event.event == FNT.LEVEL.LOAD_LEVEL) {
                     this.loadLevel(event.params);
                 }
             }
         },
         
         loadLevel : function(levelData) {
+        	alert("Should be loading level!");
             // DO STUFF HERE!
             /*
             var snumber = this.level.toString();
@@ -144,7 +148,7 @@
 
     FNT.GameScene.prototype= {
 
-        context:                    null,
+        gameModel:                  null,
         directorScene:              null,
 
         levelContainer:             null,
@@ -169,9 +173,8 @@
 
             this.director = director;
 
-            this.context = new FNT.Context().
-                    create().
-                    addContextListener(this);
+            // Create a game model and register for game events
+            this.gameModel = new FNT.GameModel().create().addEventListener(this);
 
             this.directorScene = director.createScene();
             this.directorScene.activated = function() {
@@ -180,20 +183,25 @@
 
             var dw = director.width;
             var dh = director.height;
-
-            this.levelContainer = new CAAT.ActorContainer().
-                    create().
-                    setSize(dw, dh).
-                    setLocation(0, 0);
-
-            this.levelContainer.loadLevel(this.context.getLevel());
+            
+            this.createLevel(dw,dh);
 
             ////////////////////////////////////////////////
             this.create_EndGame(director);
             this.create_EndLevel(director);
             this.soundControls( director );
             ////////////////////////////////////////////////
+            
+            this.gameModel.startGame(FNT.GameModes.quest);
+            
             return this;
+        },
+        
+        createLevel : function(width, height) {
+            this.levelContainer = new CAAT.LevelContainer().
+                    create(this.gameModel).
+                    setSize(width, height).
+                    setLocation(0, 0);
         },
 
         create_EndLevel : function( director ) {
@@ -203,17 +211,17 @@
             // HANDLE END GAME HERE!
         },
 
-        contextEvent : function( event ) {
+        handleEvent : function( event ) {
 
             var me= this;
 
-            if ( event.source=='context' ) {
+            if ( event.source == FNT.GameModel.GAME_EVENT ) {
                 if ( event.event=='levelchange') {
                     //this.bricksContainer.enableEvents(true);
                 } else if ( event.event=='status') {
-                    if ( event.params==this.context.ST_INITIALIZING ) {
+                    if ( event.params==this.gameModel.ST_INITIALIZING ) {
                         //this.initializeActors();
-                    } else if ( event.params==this.context.ST_RUNNNING) {
+                    } else if ( event.params==this.gameModel.ST_RUNNNING) {
                         //this.cancelTimer();
                         //this.enableTimer();
 
@@ -221,15 +229,7 @@
                 }
             }
         },
-        addGameListener : function(gameListener) {
-            this.gameListener.push(gameListener);
-        },
-        fireEvent : function( type, data ) {
-            for( var i=0, l= this.gameListener.length; i<l; i++ ) {
-                this.gameListener[i].gameEvent(type, data);
-            }
-        },
-     
+        
         prepareSound : function() {
             try {
                 this.sound.prepare();
