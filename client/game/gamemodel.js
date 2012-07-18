@@ -1,143 +1,51 @@
 /**
- * See LICENSE file.
- *
  * Game model..
  */
 
-// GAMEMODES
+
+/*
+ * TODOS:
+ *   1) Each of these model objects should probably be called xxxModel and should fire their own events? (instead of everything passing through the GameModel)
+ */
+
 (function() {
-    FNT.GameModes = {
-        quest:  {
-            arb:                true,
-            name:               'quest',
-            levelData: [
-               {  // LEVEL 1
-                   spawnLocation : {x: 512, y: 800},
-                   ringData : [  
-                                  {x: 512, y: 512, diameter: 900},
-                                  {x: 100, y: 400, diameter: 190},
-                                  {x: 300, y: 600, diameter: 200},
-                                  {x: 512, y: 512, diameter: 100},
-                                  {x: 700, y: 800, diameter: 200}],
-               },
-               {  // LEVEL 2
-                   spawnLocation : {x: 512, y: 800},
-                   ringData : [
-                                  {x: 512, y: 512, diameter: 1000},
-                                  {x: 100, y: 100, diameter: 100}],
-               },
-            ]
-                        
-        },
-        race : {
-            name:               'race'
-        },
-        pwn : {
-            name:               'pwn'
-        }
-    }
-})();
-
-// EVENT SOURCES
-(function() {
-    FNT.EventSources = {
-    	LEVEL:         "event_source_level",
-    	GAME_MODEL:    "event_source_game_model"
-    }
-})();
-
-// PLAYERS
-(function() {
-
-    FNT.Player = function() {
-        this.position = new CAAT.Point(0, 0);
-
+     FNT.ObservableModel = function() {
+        this.observers = [];
         return this;
     };
 
-    FNT.Player.prototype = {
+    FNT.ObservableModel.prototype = {
+        observers:      null,
 
-        diameter:        0,
-        position:        null,
-        color:           "#F00",
-
-        create : function(x, y, diameter) {
-            this.position = new CAAT.Point(x, y);
-            this.diameter = diameter;
-            
-            return this;
-        },
-    };
-
-})();
-
-// RINGS
-(function() {
-
-    FNT.Ring = function() {
-        this.position = new CAAT.Point(0, 0);
-
-        return this;
-    };
-
-    FNT.Ring.prototype= {
-
-        diameter:        0,
-        position:      null,
-        color:         null,
-
-        create : function(x, y, diameter) {
-            this.position = new CAAT.Point(x, y);
-            this.diameter = diameter;
-            
-            return this;
-        },
-    };
-
-})();
-
-// LEVEL EVENTS
-(function() {
-    FNT.LevelEvents = {
-    	LOAD:         "level_events_load"
-    }
-})();
-
-// LEVEL
-(function () {
-    FNT.Level = function() {
-        this.rings = []
-        return this;
-    };
-    
-    FNT.Level.prototype = {
-        rings:        null,
-        gameModel:    null,
-
-        create : function( ringData, gameModel ) {
-        	this.gameModel = gameModel;
-        	
-            var currentRing = null;
-            for (var i = 0; i < ringData.length; i++) {
-                currentRing = ringData[i];
-
-                var ring = new FNT.Ring().create(currentRing.x, currentRing.y, currentRing.diameter);
-
-                this.rings.push(ring);
+        /**
+         * Notify observers of a model event.
+         *   The Event is an object with fields:
+         *     eventType | eventData
+         * @param eventType : a string indicating the event type
+         * @param data an object with event data. Each event type will have its own data structure.
+         */
+        notifyObservers : function( eventType, eventData ) {
+            for (var i = 0; i < this.observers.length; i++) {
+                this.observers[i].handleEvent( {
+                    type:  eventType,
+                    data: eventData,
+                });
             }
-            
-            this.gameModel.fireEvent(FNT.EventSources.LEVEL, FNT.LevelEvents.LOAD, this);
         },
-        
-        getRings : function () { return this.rings },
-    };
 
+        addObserver : function( observer ) {
+            this.observers.push(observer);
+            return this;
+        },
+    };
 })();
 
 // GAME MODEL EVENTS
 (function() {
     FNT.GameModelEvents = {
-    	UPDATE_STATUS:         "game_model_events_update_status"
+    	UPDATE_STATUS:         "update_status_event",
+    	CREATE_LEVEL:          "create_level_event",
+    	ADDED_PLAYER:          "added_player_event",
     }
 })();
 
@@ -145,19 +53,18 @@
 (function() {
 
     FNT.GameModel= function() {
-        this.eventListener= [];
+        FNT.GameModel.superclass.constructor.call(this);
+        
         return this;
     };
 
     FNT.GameModel.prototype= {
 
-        eventListener:      null,   // context listeners
-
         gameMode:           null,
 
         level:              null,
         player:             null,
-        currentLevelIndex:  0,
+        currentLevelData:   null,
 
         ST_STARTGAME:       5,
         ST_INITIALIZING:    0,
@@ -172,9 +79,23 @@
          * @return nothing.
          */
         create : function() {
-            this.player = new FNT.Player().create()
+            // NOTE: Creating Level before Player so that the Player ends up on top...
+            this.createLevel();
+            this.createPlayer();
             
             return this;
+        },
+        
+        createPlayer : function() {
+            this.player = new FNT.Player().create();
+            
+            this.notifyObservers( FNT.GameModelEvents.ADDED_PLAYER, this.player );
+        },
+        
+        createLevel : function() {
+            this.level = new FNT.LevelModel().create();
+            
+            this.notifyObservers( FNT.GameModelEvents.CREATE_LEVEL, this.level );
         },
         
         startGame : function(gameMode) {
@@ -182,52 +103,35 @@
                 this.gameMode = gameMode;
             }
             
-            this.setStatus( this.ST_STARTGAME );
+            this.setStatus(this.ST_STARTGAME);
+            
             this.loadLevel(0);
             
-            this.spawnPlayer();
         },
 
         loadLevel : function(levelIndex) {
-            var ringData = FNT.GameModes.quest.levelData[levelIndex].ringData;
-            this.level = new FNT.Level().create(ringData, this);
+            this.currentLevelData = FNT.GameModes.quest.levelData[levelIndex];
+            this.level.load(this.currentLevelData.ringData);
 
             this.setStatus( this.ST_INITIALIZING );
-        },
-        
-        spawnPlayer : function() {
             
-        },
-
-        /**
-         * Notify listeners of a gamemodel event
-         * @param sSource event source object
-         * @param sEvent an string indicating the event type
-         * @param params an object with event parameters. Each event type will have its own parameter set.
-         */
-        fireEvent : function( sSource, sEvent, params ) {
-            var i;
-            for (i = 0; i < this.eventListener.length; i++) {
-                this.eventListener[i].handleEvent( {
-                    source: sSource,
-                    event:  sEvent,
-                    params: params
-                });
-            }
-        },
-
-        addEventListener : function( listener ) {
-            this.eventListener.push(listener);
-            return this;
+            // TODO: This should be called later when the level is actually done loading (including animations)
+            this.onLevelLoaded();
         },
         
+        onLevelLoaded : function() {
+            this.player.spawn(this.currentLevelData.spawnLocation);
+        },
+
         setStatus : function( status ) {
             this.status= status;
-            this.fireEvent( FNT.EventSources.GAME_MODEL, FNT.GameModelEvents.UPDATE_STATUS, this.status );
+            this.notifyObservers( FNT.GameModelEvents.UPDATE_STATUS, this.status );
         },
 
         timeUp : function() {
             this.setStatus( this.ST_ENDGAME );
         },
     };
+    
+    extend( FNT.GameModel, FNT.ObservableModel);
 })();

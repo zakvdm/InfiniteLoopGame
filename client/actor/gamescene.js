@@ -6,38 +6,36 @@
 
 (function() {
     FNT.GameScene = function() {
-        this.gameListener= [];
         return this;
     };
 
-    FNT.GameScene.prototype= {
+    FNT.GameScene.prototype = {
 
-        gameModel:                  null,
-        directorScene:              null,
+        gameModel : null,
+        directorScene : null,
 
-        levelContainer:             null,
-        backgroundContainer:        null,
+        // ACTORS:
+        levelContainer : null,
+        playerActor : null,
+        backgroundContainer : null,
 
-        director:                   null,
+        director : null,
 
-        actorInitializationCount:   0,  // flag indicating how many actors have finished initializing.
-
-        music:                      null,
-        sound:                      null,
-
-        gameListener:               null,
+        music : null,
+        sound : null,
 
         /**
          * Creates the main game Scene.
          * @param director a CAAT.Director instance.
          */
         create : function(director) {
-            var me = this;  // CLOSURE FOR 'directorScene.activated'
-            
+            var me = this;
+            // CLOSURE FOR 'directorScene.activated'
+
             this.director = director;
 
-            // Create a game model and register for game events
-            this.gameModel = new FNT.GameModel().create().addEventListener(this);
+            this.gameModel = new FNT.GameModel().addObserver(this);
+            // Create a GameModel and register to observe changes to it
 
             // Create a scene, and start the game when the scene finishes initializing
             this.directorScene = director.createScene();
@@ -45,65 +43,62 @@
                 me.gameModel.startGame(FNT.GameModes.quest);
             };
 
-            var dw = director.width;
-            var dh = director.height;
-            
-            // CREATE THE BACKGROUND:
-            this.backgroundContainer = new FNT.BackgroundContainer().create(this.directorScene, dw, dh);
-            
-            this.createLevel(dw,dh);
+            // CREATE THE BACKGROUND (We want to add this first because it should be at the back):
+            this.backgroundContainer = new FNT.BackgroundContainer().create(this.directorScene, director.width, director.height);
+
+            // This will create all of the entities contained in the GameModel, so we need to create the scene first so there's something to attach them to...
+            this.gameModel.create();
 
             ////////////////////////////////////////////////
             this.create_EndGame(director);
             this.create_EndLevel(director);
             ////////////////////////////////////////////////
-            
-            
+
             return this;
         },
-        
-        createLevel : function(width, height) {
+
+        createLevel : function(levelModel) {
             this.levelContainer = new FNT.LevelContainer().
-                    create(this.directorScene, this.gameModel).
-                    setSize(width, height).
-                    setLocation(0, 0);
-                    
-            this.directorScene.addChild(this.levelContainer);
+                                  create(this.directorScene, levelModel).
+                                  setSize(this.director.width, this.director.height).
+                                  setLocation(0, 0);
         },
 
-        create_EndLevel : function( director ) {
+        createPlayer : function(player) {
+            this.playerActor = new FNT.PlayerActor().
+                               create(this.directorScene, player);
+        },
+
+        create_EndLevel : function(director) {
             // HANDLE LEVEL COMPLETE HERE!
         },
-        create_EndGame : function(director, go_to_menu_callback ) {
+        create_EndGame : function(director, go_to_menu_callback) {
             // HANDLE END GAME HERE!
         },
 
-        handleEvent : function( event ) {
+        handleEvent : function(event) {
+            if (event.type == FNT.GameModelEvents.ADDED_PLAYER) {
+                this.createPlayer(event.data);
+            } else if (event.type == FNT.GameModelEvents.CREATE_LEVEL) {
+                this.createLevel(event.data);
+            } else if (event.type == FNT.GameModelEvents.UPDATE_STATUS) {
+                if (event.data == this.gameModel.ST_INITIALIZING) {
+                    //this.initializeActors();
+                } else if (event.data == this.gameModel.ST_RUNNNING) {
+                    //this.cancelTimer();
+                    //this.enableTimer();
 
-            var me= this;
-
-            if ( event.source == FNT.EventSources.GAME_MODEL ) {
-                if ( event.event == FNT.GameModelEvents.UPDATE_STATUS ) {
-                    if ( event.params == this.gameModel.ST_INITIALIZING ) {
-                        //this.initializeActors();
-                    } else if ( event.params == this.gameModel.ST_RUNNNING) {
-                        //this.cancelTimer();
-                        //this.enableTimer();
-
-                    }
                 }
             }
         },
-        
+
         prepareSound : function() {
             try {
                 this.sound.prepare();
                 this.music.prepare();
-            }
-            catch(e) {
+            } catch(e) {
 
             }
         }
-
     };
 })();

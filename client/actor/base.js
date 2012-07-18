@@ -11,8 +11,8 @@
     
     FNT.CircleActor.prototype = {
 
-        setPosition : function(x, y) {
-            this.centerAt(x, y);
+        setPosition : function(point) {
+            this.centerAt(point.x, point.y);
         },
         
         setDiameter : function(diameter) {

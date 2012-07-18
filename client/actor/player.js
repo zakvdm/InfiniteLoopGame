@@ -9,44 +9,56 @@
         return this;
     };
 
-    FNT.PlayerActor.status= {
-        REGULAR:    0,      // player can roll along inside and outside.
-        SOLID:    1      // player can only roll along outside
-    }
-
     FNT.PlayerActor.prototype = {
 
-        status:         0,  // 0: regular state, 1: solid
+        player:                null,
+        spawnScaleBehaviour:   null,
+        spawnAlphaBehaviour:   null,
 
-        ring:           null,
-
-        create : function( ring ) {
-            this.setDiameter(ring.diameter);
-            this.setPosition(ring.position.x, ring.position.y);
+        create : function( scene, player ) {
+            this.setVisible(false);
+            
+            this.setDiameter(player.diameter);
+            this.setPosition(player.position);
             
             this.setStrokeStyle('#0');
-            this.setFillStyle('#AAA');
-            this.setAlpha(0.5);
+            this.setFillStyle(player.color);
 
-            this.ring = ring ;
+            this.player = player;
+            
+            this.prepareSpawnBehavior();
 
+            player.addObserver(this);
+            
+            scene.addChild(this);
+            
             return this;
         },
-
-        mouseEnter : function(mouseEvent) {
-
-            if ( this.ring.selected ) {
-                return;
+        
+        prepareSpawnBehavior : function() {
+            this.spawnScaleBehavior = new CAAT.ScaleBehavior().
+                     setPingPong().  // We want it to swell and then return to its actual size
+                     setValues(1, 1.3, 1, 1.3, .50, .50).  // Scale to 1.3x normal size from centre
+                     setDelayTime(0, 1000); // takes 1 seconds to scale. time measured from parent's zero time.
+                     
+            this.spawnAlphaBehavior = new CAAT.AlphaBehavior().
+                     setValues(0, 1). // Fade it in
+                     setDelayTime(0, 1000);  // Finish fading in before animation completes
+        },
+        
+        handleEvent : function(event) {
+            if ( event.type == FNT.PlayerEvents.SPAWN) {
+                this.spawn();
             }
-
-            //this.parent.setZOrder( this, Number.MAX_VALUE );
         },
-        mouseExit : function(mouseEvent) { },
-        mouseDown : function(mouseEvent) {
-            this.ring.changeSelection();
-        },
-        toString : function() {
-            return 'FNT.Player ' + this.player.getLocation() + ',' + this.player.getSize();
+        
+        spawn : function() {
+            this.setPosition(this.player.position);
+            
+            this.addBehavior(this.spawnScaleBehavior);
+            this.addBehavior(this.spawnAlphaBehavior);
+            
+            this.setVisible(true);
         },
 
     };
