@@ -3,43 +3,6 @@
  */
 
 
-/*
- * TODOS:
- *   1) Each of these model objects should probably be called xxxModel and should fire their own events? (instead of everything passing through the GameModel)
- */
-
-(function() {
-     FNT.ObservableModel = function() {
-        this.observers = [];
-        return this;
-    };
-
-    FNT.ObservableModel.prototype = {
-        observers:      null,
-
-        /**
-         * Notify observers of a model event.
-         *   The Event is an object with fields:
-         *     eventType | eventData
-         * @param eventType : a string indicating the event type
-         * @param data an object with event data. Each event type will have its own data structure.
-         */
-        notifyObservers : function( eventType, eventData ) {
-            for (var i = 0; i < this.observers.length; i++) {
-                this.observers[i].handleEvent( {
-                    type:  eventType,
-                    data: eventData,
-                });
-            }
-        },
-
-        addObserver : function( observer ) {
-            this.observers.push(observer);
-            return this;
-        },
-    };
-})();
-
 // GAME MODEL EVENTS
 (function() {
     FNT.GameModelEvents = {

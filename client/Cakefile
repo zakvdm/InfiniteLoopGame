@@ -1,0 +1,53 @@
+### Build file for Frenetic. ###
+{exec, spawn} = require 'child_process'
+
+config =
+    compiled: 'compiled'
+    output: 'lib'
+    source: 'src'
+
+target = 'frenetic'
+files = [
+        'base'
+        'model/ObservableModel'
+        'model/GameModes'
+        'model/PlayerModel'
+]
+
+notify = (message) ->
+    spawn 'notify-send', ['--expire-time=1000', 'CoffeeScript',  message]
+    
+buildSingleFile = (files) ->
+    output_file = "#{config.output}/#{target}.js"
+    
+    build_command = "coffee --join #{output_file} --compile #{(files.join ' ')}"
+    #process.stdout.write "Running: #{build_command}"
+    build = exec build_command
+
+    build.stdout.on 'data', (data) ->
+        process.stdout.write data.toString()
+        notify data
+  
+
+task 'watch', 'Watch & compile changes in source dir', ->
+
+    # Build full filenames
+    full_files = files.map (file) ->
+        file = "#{config.source}/#{file}.coffee"
+
+    # -cw is compile and watch
+    watch_command = "coffee --output #{config.compiled} -cw #{(full_files.join ' ')}"
+    watch = exec watch_command
+
+    watch.stdout.on 'data', (data) ->
+        process.stdout.write data.toString()
+        notify data
+        
+        buildSingleFile(full_files)
+
+    ###
+    watch.stderr.on 'data', (data) ->
+        process.stderr.write data
+        notify "ERROR : " + data.toString()
+    ###
+
