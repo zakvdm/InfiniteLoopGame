@@ -52,7 +52,7 @@ function __end_loading(director, images) {
     director.emptyScenes();
     director.setImagesCache(images);
 
-    var gameScene = new FNT.GameScene().create(director);
+    var gameScene = new FNT.GameSceneActor().create(director);
            
     // LOAD THE FIRST SCENE: 
     director.easeIn(

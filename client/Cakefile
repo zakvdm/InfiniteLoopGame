@@ -12,6 +12,12 @@ files = [
         'model/ObservableModel'
         'model/GameModes'
         'model/PlayerModel'
+        'actor/CircleActor'
+        'actor/PlayerActor'
+        'actor/RingActor'
+        'actor/LevelContainer'
+        'actor/BackgroundContainer'
+        'actor/GameSceneActor'
 ]
 
 notify = (message) ->

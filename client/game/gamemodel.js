@@ -50,7 +50,7 @@
         },
         
         createPlayer : function() {
-            this.player = new FNT.Player().create();
+            this.player = new FNT.PlayerModel().create();
             
             this.notifyObservers( FNT.GameModelEvents.ADDED_PLAYER, this.player );
         },

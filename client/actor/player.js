@@ -2,6 +2,7 @@
  * Player Actor
  */
 
+/*
 (function() {
     FNT.PlayerActor = function() {
         FNT.PlayerActor.superclass.constructor.call(this);
@@ -65,4 +66,5 @@
 
     extend( FNT.PlayerActor, FNT.CircleActor);
 })();
+*/
 

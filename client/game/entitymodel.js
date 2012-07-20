@@ -2,44 +2,6 @@
  * Game Entities
  */
 
-// PLAYER EVENTS
-(function() {
-    FNT.PlayerEvents = {
-    	SPAWN:         "player_event_spawn"
-    }
-})();
-
-// PLAYERS
-(function() {
-
-    FNT.Player = function() {
-        FNT.Player.superclass.constructor.call(this);
-        
-        return this;
-    };
-
-    FNT.Player.prototype = {
-        diameter:        25,
-        position:        null,
-        color:           "#F00",
-        
-        create : function() {
-            this.position = new CAAT.Point(0, 0);
-            
-            return this;
-        },
-
-        spawn : function(spawnLocation) {
-            this.position.x = spawnLocation.x;
-            this.position.y = spawnLocation.y;
-            
-            this.notifyObservers(FNT.PlayerEvents.SPAWN, this);
-        },
-    };
-
-    extend( FNT.Player, FNT.ObservableModel);
-})();
-
 // RINGS
 (function() {
 

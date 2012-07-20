@@ -21,29 +21,3 @@ class ObservableModel
 namespace "FNT", (exports) ->
   exports.ObservableModel = ObservableModel
   
-###
-(function() {
-     FNT.ObservableModel = function() {
-        this.observers = [];
-        return this;
-    };
-
-    FNT.ObservableModel.prototype = {
-        observers:      null,
-
-        notifyObservers : function( eventType, eventData ) {
-            for (var i = 0; i < this.observers.length; i++) {
-                this.observers[i].handleEvent( {
-                    type:  eventType,
-                    data: eventData,
-                });
-            }
-        },
-
-        addObserver : function( observer ) {
-            this.observers.push(observer);
-            return this;
-        },
-    };
-})();
-###
