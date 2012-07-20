@@ -12,6 +12,8 @@ files = [
         'model/ObservableModel'
         'model/GameModes'
         'model/PlayerModel'
+        'model/RingModel'
+        'model/LevelModel'
         'actor/CircleActor'
         'actor/PlayerActor'
         'actor/RingActor'
