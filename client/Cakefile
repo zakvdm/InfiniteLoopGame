@@ -9,18 +9,25 @@ config =
 target = 'frenetic'
 files = [
         'base'
+        # MODELS:
         'model/ObservableModel'
         'model/GameModes'
         'model/PlayerModel'
         'model/RingModel'
         'model/LevelModel'
         'model/GameModel'
+        
+        # ACTORS (VIEWS):
         'actor/CircleActor'
         'actor/PlayerActor'
         'actor/RingActor'
         'actor/LevelContainer'
         'actor/BackgroundContainer'
         'actor/GameSceneActor'
+        
+        # PHYSICS:
+        'physics/behaviour/CouplePosition'
+        'physics/PhysicsController'
         'main'
 ]
 
