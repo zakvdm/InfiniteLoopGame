@@ -90,7 +90,7 @@ __frenetic_init = ->
 
           new CAAT.ImagePreloader().loadImages(
               [
-                  {id:'target-number',    url: prefix + 'res/img/target.png'}
+                  #{id:'target-number',    url: prefix + 'res/img/target.png'}
               ],
               (counter, images) ->
                 if (counter == images.length)

@@ -685,12 +685,7 @@
       if (counter === images.length) {
         director.setImagesCache(images);
         loading_scene = __FNT__createLoadingScene(director);
-        return new CAAT.ImagePreloader().loadImages([
-          {
-            id: 'target-number',
-            url: prefix + 'res/img/target.png'
-          }
-        ], function(counter, images) {
+        return new CAAT.ImagePreloader().loadImages([], function(counter, images) {
           if (counter === images.length) {
             director.addAudio("music", prefix + "res/sound/music.mp3");
           }
