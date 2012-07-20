@@ -14,6 +14,7 @@ files = [
         'model/PlayerModel'
         'model/RingModel'
         'model/LevelModel'
+        'model/GameModel'
         'actor/CircleActor'
         'actor/PlayerActor'
         'actor/RingActor'
