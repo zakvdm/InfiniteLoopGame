@@ -43,7 +43,6 @@ namespace "FNT", (exports) ->
       
       @
         
-        
     loadLevel: (levelIndex) ->
       @currentLevelData = FNT.GameModes.quest.levelData[levelIndex];
       @level.load(this.currentLevelData.ringData);

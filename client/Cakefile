@@ -25,8 +25,14 @@ files = [
         'actor/BackgroundContainer'
         'actor/GameSceneActor'
         
+        # INPUT:
+        'input/Keyboard'
+        
         # PHYSICS:
+        'physics/PhysicsConstants'
         'physics/behaviour/CouplePosition'
+        'physics/behaviour/LevelCollision'
+        'physics/behaviour/InputControlled'
         'physics/PhysicsController'
         'main'
 ]
@@ -62,9 +68,7 @@ task 'watch', 'Watch & compile changes in source dir', ->
         
         buildSingleFile(full_files)
 
-    ###
     watch.stderr.on 'data', (data) ->
         process.stderr.write data
-        notify "ERROR : " + data.toString()
-    ###
+        #notify "ERROR : " + data.toString()
 

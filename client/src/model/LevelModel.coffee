@@ -17,7 +17,7 @@ namespace "FNT", (exports) ->
           
     load : (ringData) ->
       for ring in ringData
-        @rings.push new FNT.RingModel().create(ring) # TODO: Why not just pass the 'ring' object?
+        @rings.push new FNT.RingModel().create(ring)
       
       @notifyObservers(FNT.LevelEvents.LOAD, @)
     
