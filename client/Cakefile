@@ -21,6 +21,7 @@ files = [
         'actor/LevelContainer'
         'actor/BackgroundContainer'
         'actor/GameSceneActor'
+        'main'
 ]
 
 notify = (message) ->
