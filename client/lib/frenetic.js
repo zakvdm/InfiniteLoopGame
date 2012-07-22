@@ -156,7 +156,12 @@
         return this.notifyObservers(FNT.PlayerEvents.NEW_POSITION, this);
       };
 
-      PlayerModel.prototype.spawn = function(spawnLocation) {
+      /* Spawn in the given LevelModel at the given spawnLocation
+      */
+
+
+      PlayerModel.prototype.spawn = function(level, spawnLocation) {
+        this.level = level;
         this.position.x = spawnLocation.x;
         this.position.y = spawnLocation.y;
         return this.notifyObservers(FNT.PlayerEvents.SPAWN, this);
@@ -283,7 +288,7 @@
       };
 
       GameModel.prototype.onLevelLoaded = function() {
-        return this.player.spawn(this.currentLevelData.spawnLocation);
+        return this.player.spawn(this.level, this.currentLevelData.spawnLocation);
       };
 
       return GameModel;
@@ -580,16 +585,16 @@
 
       Keyboard.prototype.RIGHT = false;
 
-      Keyboard.prototype.create = function() {
+      Keyboard.prototype.create = function(modeChangedCallback) {
+        var _this = this;
+        this.modeChangedCallback = modeChangedCallback;
         /*
                # Register a CAAT key listener function
         */
 
-        var _this = this;
         CAAT.registerKeyListener(function(keyEvent) {
           return _this.checkInput(keyEvent);
         });
-        console.log(this.inputState);
         return this;
       };
 
@@ -603,7 +608,11 @@
       };
 
       Keyboard.prototype.checkInput = function(keyEvent) {
+        var inAlternateState;
         switch (keyEvent.getKeyCode()) {
+          case CAAT.Keys.v:
+            inAlternateState = this.getKeyState(keyEvent);
+            return this.modeChangedCallback(inAlternateState);
           case CAAT.Keys.UP:
           case CAAT.Keys.w:
             return this.JUMP = this.getKeyState(keyEvent);
@@ -655,10 +664,6 @@
   */
 
 
-  /* CouplePosition Behaviour couples the position of an arbitrary entity to a particle
-  */
-
-
   namespace("FNT", function(exports) {
     return exports.LevelCollision = (function(_super) {
 
@@ -702,6 +707,73 @@
     })(Behaviour);
   });
 
+  /* This behaviour attaches the particle to the first Ring it encounters and 'glides' it around the Ring
+  */
+
+
+  namespace("FNT", function(exports) {
+    return exports.RingRiding = (function(_super) {
+
+      __extends(RingRiding, _super);
+
+      function RingRiding(levelModel, useMass, callback) {
+        this.levelModel = levelModel;
+        this.useMass = useMass != null ? useMass : true;
+        this.callback = callback != null ? callback : null;
+        this._delta = new Vector();
+        this.OVERLAP = 5;
+        RingRiding.__super__.constructor.apply(this, arguments);
+        this;
+
+      }
+
+      RingRiding.prototype.apply = function(p, dt, index) {
+        var currentOverlap, dist, offset, ring;
+        ring = this.getAttachableRing(p);
+        if (!(ring != null)) {
+          return;
+        }
+        dist = this.distanceBetween(p, ring);
+        if (dist < ring.radius) {
+          currentOverlap = dist + p.radius - ring.radius;
+          offset = this.OVERLAP - currentOverlap;
+          return p.pos.add(this._delta.norm().scale(offset));
+        } else {
+          currentOverlap = ring.radius + p.radius - dist;
+          offset = currentOverlap - this.OVERLAP;
+          return p.pos.add(this._delta.norm().scale(offset));
+        }
+      };
+
+      RingRiding.prototype.getAttachableRing = function(p) {
+        var dist, inner_perimeter, outer_perimeter, ring, _i, _len, _ref;
+        if (p.ring != null) {
+          return p.ring;
+        }
+        _ref = this.levelModel.getRings();
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          ring = _ref[_i];
+          dist = this.distanceBetween(p, ring);
+          outer_perimeter = ring.radius + p.radius;
+          inner_perimeter = ring.radius - p.radius;
+          if ((inner_perimeter < dist && dist < outer_perimeter)) {
+            p.ring = ring;
+            return p.ring;
+          }
+          null;
+        }
+      };
+
+      RingRiding.prototype.distanceBetween = function(a, b) {
+        this._delta.copy(a.pos).sub(b.position);
+        return this._delta.mag();
+      };
+
+      return RingRiding;
+
+    })(Behaviour);
+  });
+
   /* The InputControlled Behaviour applies user input to the player's particle
   */
 
@@ -717,12 +789,20 @@
 
       }
 
-      InputControlled.prototype.create = function() {
-        this.keyboard = new FNT.Keyboard().create();
+      InputControlled.prototype.create = function(keyboard) {
+        this.keyboard = keyboard;
         return this;
       };
 
       InputControlled.prototype.apply = function(p, dt, index) {
+        if (this.keyboard.ALT_MODE) {
+          return this.applyAltMode(p);
+        } else {
+          return this.applyNormal(p);
+        }
+      };
+
+      InputControlled.prototype.applyNormal = function(p) {
         if (this.keyboard.JUMP) {
           p.acc.add(new Vector(0, FNT.PhysicsConstants.JUMP_SPEED));
         }
@@ -734,9 +814,82 @@
         }
       };
 
+      InputControlled.prototype.applyAltMode = function(p) {
+        if (this.keyboard.JUMP) {
+          p.acc.add(new Vector(0, 3 * FNT.PhysicsConstants.JUMP_SPEED));
+        }
+        if (this.keyboard.LEFT) {
+          p.acc.add(new Vector(-3 * FNT.PhysicsConstants.MOVE_SPEED, 0));
+        }
+        if (this.keyboard.RIGHT) {
+          return p.acc.add(new Vector(3 * FNT.PhysicsConstants.MOVE_SPEED, 0));
+        }
+      };
+
       return InputControlled;
 
     })(Behaviour);
+  });
+
+  /* This class models a Frenetic Player's interaction with the physics system
+  */
+
+
+  namespace("FNT", function(exports) {
+    return exports.PlayerParticle = (function(_super) {
+
+      __extends(PlayerParticle, _super);
+
+      function PlayerParticle() {
+        PlayerParticle.__super__.constructor.call(this);
+        this;
+
+      }
+
+      PlayerParticle.prototype.create = function(playerModel) {
+        var _this = this;
+        this.playerModel = playerModel;
+        this.keyboard = new FNT.Keyboard().create(function(inAlternateState) {
+          return _this.onStateChanged(inAlternateState);
+        });
+        this.setRadius(this.playerModel.radius);
+        this.inputControlled = new FNT.InputControlled().create(this.keyboard);
+        this.playerModel.addObserver(this);
+        return this;
+      };
+
+      PlayerParticle.prototype.onStateChanged = function(inAlternateState) {
+        if (!(this.behaviours[0] != null)) {
+          return;
+        }
+        if (inAlternateState) {
+          return this.behaviours[0] = this.ringRiding;
+        } else {
+          return this.behaviours[0] = this.levelCollision;
+        }
+      };
+
+      PlayerParticle.prototype.handleEvent = function(event) {
+        switch (event.type) {
+          case FNT.PlayerEvents.SPAWN:
+            return this.spawn();
+        }
+      };
+
+      PlayerParticle.prototype.spawn = function() {
+        var couplePosition;
+        this.moveTo(new Vector(this.playerModel.position.x, this.playerModel.position.y));
+        this.levelCollision = new FNT.LevelCollision(this.playerModel.level);
+        this.ringRiding = new FNT.RingRiding(this.playerModel.level);
+        couplePosition = new FNT.CouplePosition(this.playerModel);
+        this.behaviours.push(this.levelCollision);
+        this.behaviours.push(this.inputControlled);
+        return this.behaviours.push(couplePosition);
+      };
+
+      return PlayerParticle;
+
+    })(Particle);
   });
 
   /* Controller responsible for physics
@@ -756,7 +909,6 @@
         this.physics = new Physics(new Verlet());
         this.gravity = new ConstantForce(new Vector(0.0, 150.0));
         this.physics.behaviours.push(this.gravity);
-        this.inputControlled = new FNT.InputControlled().create();
         this.gameModel.addObserver(this);
         return this;
       };
@@ -775,25 +927,11 @@
             return this.levelModel = event.data;
           case FNT.GameModelEvents.ADDED_PLAYER:
             return this.initPlayerPhysics(event.data);
-          case FNT.PlayerEvents.SPAWN:
-            return this.spawnPlayer(event.data);
         }
       };
 
       PhysicsController.prototype.initPlayerPhysics = function(playerModel) {
-        this.player = new Particle();
-        this.player.setRadius(playerModel.radius);
-        return playerModel.addObserver(this);
-      };
-
-      PhysicsController.prototype.spawnPlayer = function(playerModel) {
-        var couplePosition, levelCollision;
-        this.player.moveTo(new Vector(playerModel.position.x, playerModel.position.y));
-        levelCollision = new FNT.LevelCollision(this.levelModel);
-        couplePosition = new FNT.CouplePosition(playerModel);
-        this.player.behaviours.push(levelCollision);
-        this.player.behaviours.push(this.inputControlled);
-        this.player.behaviours.push(couplePosition);
+        this.player = new FNT.PlayerParticle().create(playerModel);
         return this.physics.particles.push(this.player);
       };
 

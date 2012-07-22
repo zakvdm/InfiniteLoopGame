@@ -14,7 +14,6 @@ namespace "FNT", (exports) ->
       @gravity = new ConstantForce(new Vector 0.0, 150.0)
       @physics.behaviours.push @gravity
       
-      @inputControlled = new FNT.InputControlled().create()
 
       @gameModel.addObserver(this)
       @
@@ -31,25 +30,9 @@ namespace "FNT", (exports) ->
           @levelModel = event.data
         when FNT.GameModelEvents.ADDED_PLAYER
           @initPlayerPhysics(event.data)
-        when FNT.PlayerEvents.SPAWN
-          @spawnPlayer(event.data)
           
           
     initPlayerPhysics: (playerModel) ->
-      @player = new Particle()
-      @player.setRadius(playerModel.radius)
+      @player = new FNT.PlayerParticle().create(playerModel)
       
-      playerModel.addObserver(this)
-      
-    spawnPlayer: (playerModel) ->
-      @player.moveTo new Vector(playerModel.position.x, playerModel.position.y)
-      
-      levelCollision = new FNT.LevelCollision @levelModel
-      couplePosition = new FNT.CouplePosition playerModel
-
-      @player.behaviours.push levelCollision
-      @player.behaviours.push @inputControlled # Allow the player to be controlled by User input
-      @player.behaviours.push couplePosition # couple the particle position to the PlayerModel (which will in turn be represented by an Actor)
-
-      @physics.particles.push @player
-      
+      @physics.particles.push(@player)

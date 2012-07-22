@@ -32,7 +32,9 @@ files = [
         'physics/PhysicsConstants'
         'physics/behaviour/CouplePosition'
         'physics/behaviour/LevelCollision'
+        'physics/behaviour/RingRiding'
         'physics/behaviour/InputControlled'
+        'physics/PlayerParticle'
         'physics/PhysicsController'
         'main'
 ]

@@ -1,7 +1,5 @@
 ### This Behaviour handles Collisions with the FNT.LevelModel ###
 
-### CouplePosition Behaviour couples the position of an arbitrary entity to a particle ###
-
 namespace "FNT", (exports) ->
 
   class exports.LevelCollision extends Behaviour

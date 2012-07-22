@@ -51,5 +51,5 @@ namespace "FNT", (exports) ->
       
           
     onLevelLoaded: ->
-      @player.spawn(@currentLevelData.spawnLocation);
+      @player.spawn(@level, @currentLevelData.spawnLocation);
   
