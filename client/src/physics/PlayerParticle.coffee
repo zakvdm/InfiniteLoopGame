@@ -8,22 +8,21 @@ namespace "FNT", (exports) ->
       @
     
     create: (@playerModel) ->
+      @couplePosition = new FNT.CouplePosition(@playerModel)
+
       @keyboard = new FNT.Keyboard().create(
         (inAlternateState) => @onStateChanged(inAlternateState))
-      
+
       @setRadius(@playerModel.radius)
       @inputControlled = new FNT.InputControlled().create(@keyboard)
-      
+
       @playerModel.addObserver(this)
       @
-      
+
     onStateChanged: (inAlternateState) ->
-      if not @behaviours[0]? then return # We haven't spawned yet
-      if inAlternateState
-        @behaviours[0] = @ringRiding
-      else
-        @behaviours[0] = @levelCollision
-      
+      @ringRiding.setActive(inAlternateState)
+      @levelCollision.setActive(not inAlternateState)
+
     handleEvent: (event) ->
       switch event.type
         when FNT.PlayerEvents.SPAWN
@@ -34,10 +33,11 @@ namespace "FNT", (exports) ->
       
       @levelCollision = new FNT.LevelCollision(@playerModel.level)
       @ringRiding = new FNT.RingRiding(@playerModel.level)
-      couplePosition = new FNT.CouplePosition(@playerModel)
 
+      @behaviours.push(@ringRiding) # Allow the player to be controlled by User input (we want these accelerations to be applied first (they can be modified by later behaviours))
+      @behaviours.push(@inputControlled) # Allow the player to be controlled by User input (we want these accelerations to be applied first (they can be modified by later behaviours))
       @behaviours.push(@levelCollision)
-      @behaviours.push(@inputControlled) # Allow the player to be controlled by User input
-      @behaviours.push(couplePosition) # couple the particle position to the PlayerModel (which will in turn be represented by an Actor)
-
-    
+      @behaviours.push(@couplePosition) # couple the particle position to the PlayerModel (which will in turn be represented by an Actor)
+      
+      @ringRiding.setActive(false)
+      @levelCollision.setActive(true)

@@ -9,6 +9,8 @@ namespace "FNT", (exports) ->
     JUMP:         false
     LEFT:         false
     RIGHT:        false
+    
+    currentState: false
       
     create: (@modeChangedCallback) ->
       ###
@@ -24,11 +26,13 @@ namespace "FNT", (exports) ->
           
     checkInput: (keyEvent) ->
       switch keyEvent.getKeyCode()
-        when CAAT.Keys.v
-          inAlternateState = @getKeyState(keyEvent) # We are in the alternate state as long as the key is pressed
-          @modeChangedCallback(inAlternateState)
+        when CAAT.Keys.w
+          state = @getKeyState(keyEvent) # We are in the alternate state as long as the key is pressed
+          if state != @currentState
+            @currentState = state
+            @modeChangedCallback(state)
           
-        when CAAT.Keys.UP, CAAT.Keys.w
+        when CAAT.Keys.UP
           @JUMP = @getKeyState(keyEvent)
           
         when CAAT.Keys.LEFT, CAAT.Keys.a

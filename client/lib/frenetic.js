@@ -585,6 +585,8 @@
 
       Keyboard.prototype.RIGHT = false;
 
+      Keyboard.prototype.currentState = false;
+
       Keyboard.prototype.create = function(modeChangedCallback) {
         var _this = this;
         this.modeChangedCallback = modeChangedCallback;
@@ -608,13 +610,16 @@
       };
 
       Keyboard.prototype.checkInput = function(keyEvent) {
-        var inAlternateState;
+        var state;
         switch (keyEvent.getKeyCode()) {
-          case CAAT.Keys.v:
-            inAlternateState = this.getKeyState(keyEvent);
-            return this.modeChangedCallback(inAlternateState);
-          case CAAT.Keys.UP:
           case CAAT.Keys.w:
+            state = this.getKeyState(keyEvent);
+            if (state !== this.currentState) {
+              this.currentState = state;
+              return this.modeChangedCallback(state);
+            }
+            break;
+          case CAAT.Keys.UP:
             return this.JUMP = this.getKeyState(keyEvent);
           case CAAT.Keys.LEFT:
           case CAAT.Keys.a:
@@ -677,8 +682,15 @@
         LevelCollision.__super__.constructor.apply(this, arguments);
       }
 
+      LevelCollision.prototype.setActive = function(isActive) {
+        this.isActive = isActive;
+      };
+
       LevelCollision.prototype.apply = function(p, dt, index) {
         var dist, inner_perimeter, outer_perimeter, overlap, ring, _i, _len, _ref, _results;
+        if (!this.isActive) {
+          return;
+        }
         _ref = this.levelModel.getRings();
         _results = [];
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
@@ -721,47 +733,81 @@
         this.useMass = useMass != null ? useMass : true;
         this.callback = callback != null ? callback : null;
         this._delta = new Vector();
-        this.OVERLAP = 5;
+        this._ring_to_p = new Vector();
+        this._delta_pos = new Vector();
+        this.OVERLAP = 4;
         RingRiding.__super__.constructor.apply(this, arguments);
         this;
 
       }
 
-      RingRiding.prototype.apply = function(p, dt, index) {
-        var currentOverlap, dist, offset, ring;
-        ring = this.getAttachableRing(p);
-        if (!(ring != null)) {
-          return;
-        }
-        dist = this.distanceBetween(p, ring);
-        if (dist < ring.radius) {
-          currentOverlap = dist + p.radius - ring.radius;
-          offset = this.OVERLAP - currentOverlap;
-          return p.pos.add(this._delta.norm().scale(offset));
-        } else {
-          currentOverlap = ring.radius + p.radius - dist;
-          offset = currentOverlap - this.OVERLAP;
-          return p.pos.add(this._delta.norm().scale(offset));
-        }
+      RingRiding.prototype.setActive = function(isActive) {
+        this.isActive = isActive;
+        return this.ring = null;
       };
 
-      RingRiding.prototype.getAttachableRing = function(p) {
-        var dist, inner_perimeter, outer_perimeter, ring, _i, _len, _ref;
-        if (p.ring != null) {
-          return p.ring;
+      RingRiding.prototype.apply = function(p, dt, index) {
+        var beef, component_perpendicular_to_tangent, currentOverlap, dist, offset, old_dist, _ref, _ref1, _ref2;
+        if (!this.isActive) {
+          return;
         }
+        if ((_ref = this.ring) == null) {
+          this.ring = this.findAttachableRing(p);
+        }
+        if (!(this.ring != null)) {
+          return;
+        }
+        dist = this.distanceBetween(p, this.ring);
+        old_dist = new Vector();
+        old_dist.copy(p.old).dist(this.ring.position);
+        if ((old_dist < (_ref1 = this.ring.radius) && _ref1 < dist) || (dist < (_ref2 = this.ring.radius) && _ref2 < old_dist)) {
+          beef = true;
+          console.log("CROSSING OVER!");
+        }
+        if (dist < this.ring.radius) {
+          currentOverlap = dist + p.radius - this.ring.radius;
+          if (currentOverlap > 7) {
+            console.log("Big overlap: " + currentOverlap + " " + beef);
+          }
+          offset = this.OVERLAP - currentOverlap;
+          p.pos.add(this._delta.norm().scale(offset));
+        } else {
+          currentOverlap = this.ring.radius + p.radius - dist;
+          if (currentOverlap > 7) {
+            console.log("Big overlap: " + currentOverlap + " " + beef);
+          }
+          offset = currentOverlap - this.OVERLAP;
+          p.pos.add(this._delta.norm().scale(offset));
+        }
+        this._ring_to_p.copy(p.pos).sub(this.ring.position).norm();
+        this._delta_pos.copy(p.pos).sub(p.old.pos);
+        component_perpendicular_to_tangent = Vector.project(this._ring_to_p, this._delta_pos);
+        if (component_perpendicular_to_tangent.mag() > 2) {
+          console.log("MAKING A BIG ADJUSTMENT");
+        }
+        return p.old.pos.add(component_perpendicular_to_tangent);
+      };
+
+      RingRiding.prototype.findAttachableRing = function(p) {
+        var r, _i, _len, _ref;
         _ref = this.levelModel.getRings();
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-          ring = _ref[_i];
-          dist = this.distanceBetween(p, ring);
-          outer_perimeter = ring.radius + p.radius;
-          inner_perimeter = ring.radius - p.radius;
-          if ((inner_perimeter < dist && dist < outer_perimeter)) {
-            p.ring = ring;
-            return p.ring;
+          r = _ref[_i];
+          if (this.overlapsWithRing(p, r)) {
+            p.acc.clear();
+            this.ring = r;
+            return this.ring;
           }
-          null;
         }
+        return null;
+      };
+
+      RingRiding.prototype.overlapsWithRing = function(p, ring) {
+        var dist, inner_perimeter, outer_perimeter;
+        dist = this.distanceBetween(p, ring);
+        outer_perimeter = ring.radius + p.radius;
+        inner_perimeter = ring.radius - p.radius;
+        return (inner_perimeter < dist && dist < outer_perimeter);
       };
 
       RingRiding.prototype.distanceBetween = function(a, b) {
@@ -795,14 +841,6 @@
       };
 
       InputControlled.prototype.apply = function(p, dt, index) {
-        if (this.keyboard.ALT_MODE) {
-          return this.applyAltMode(p);
-        } else {
-          return this.applyNormal(p);
-        }
-      };
-
-      InputControlled.prototype.applyNormal = function(p) {
         if (this.keyboard.JUMP) {
           p.acc.add(new Vector(0, FNT.PhysicsConstants.JUMP_SPEED));
         }
@@ -811,18 +849,6 @@
         }
         if (this.keyboard.RIGHT) {
           return p.acc.add(new Vector(FNT.PhysicsConstants.MOVE_SPEED, 0));
-        }
-      };
-
-      InputControlled.prototype.applyAltMode = function(p) {
-        if (this.keyboard.JUMP) {
-          p.acc.add(new Vector(0, 3 * FNT.PhysicsConstants.JUMP_SPEED));
-        }
-        if (this.keyboard.LEFT) {
-          p.acc.add(new Vector(-3 * FNT.PhysicsConstants.MOVE_SPEED, 0));
-        }
-        if (this.keyboard.RIGHT) {
-          return p.acc.add(new Vector(3 * FNT.PhysicsConstants.MOVE_SPEED, 0));
         }
       };
 
@@ -849,6 +875,7 @@
       PlayerParticle.prototype.create = function(playerModel) {
         var _this = this;
         this.playerModel = playerModel;
+        this.couplePosition = new FNT.CouplePosition(this.playerModel);
         this.keyboard = new FNT.Keyboard().create(function(inAlternateState) {
           return _this.onStateChanged(inAlternateState);
         });
@@ -859,14 +886,8 @@
       };
 
       PlayerParticle.prototype.onStateChanged = function(inAlternateState) {
-        if (!(this.behaviours[0] != null)) {
-          return;
-        }
-        if (inAlternateState) {
-          return this.behaviours[0] = this.ringRiding;
-        } else {
-          return this.behaviours[0] = this.levelCollision;
-        }
+        this.ringRiding.setActive(inAlternateState);
+        return this.levelCollision.setActive(!inAlternateState);
       };
 
       PlayerParticle.prototype.handleEvent = function(event) {
@@ -877,14 +898,15 @@
       };
 
       PlayerParticle.prototype.spawn = function() {
-        var couplePosition;
         this.moveTo(new Vector(this.playerModel.position.x, this.playerModel.position.y));
         this.levelCollision = new FNT.LevelCollision(this.playerModel.level);
         this.ringRiding = new FNT.RingRiding(this.playerModel.level);
-        couplePosition = new FNT.CouplePosition(this.playerModel);
-        this.behaviours.push(this.levelCollision);
+        this.behaviours.push(this.ringRiding);
         this.behaviours.push(this.inputControlled);
-        return this.behaviours.push(couplePosition);
+        this.behaviours.push(this.levelCollision);
+        this.behaviours.push(this.couplePosition);
+        this.ringRiding.setActive(false);
+        return this.levelCollision.setActive(true);
       };
 
       return PlayerParticle;

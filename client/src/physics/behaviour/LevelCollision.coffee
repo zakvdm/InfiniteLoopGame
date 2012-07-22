@@ -10,8 +10,11 @@ namespace "FNT", (exports) ->
         @_delta = new Vector()
 
         super
+        
+    setActive: (@isActive) ->
     
     apply: (p, dt, index) ->
+      if not @isActive then return
       
       for ring in @levelModel.getRings() # ring is FNT.RingModel
         @_delta.copy(p.pos).sub(ring.position) # delta points from ring.position to p.pos
