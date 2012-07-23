@@ -68,7 +68,7 @@
         levelData: [
           {
             spawnLocation: {
-              x: 712,
+              x: 312,
               y: 200
             },
             ringData: [
@@ -96,6 +96,30 @@
                 x: 850,
                 y: 800,
                 diameter: 200
+              }, {
+                x: 600,
+                y: 300,
+                diameter: 250
+              }, {
+                x: 800,
+                y: 300,
+                diameter: 250
+              }
+            ]
+          }, {
+            spawnLocation: {
+              x: 1000,
+              y: 512
+            },
+            exit: {
+              x: 980,
+              y: 480
+            },
+            ringData: [
+              {
+                x: 512,
+                y: 512,
+                diameter: 1024
               }
             ]
           }, {
@@ -579,7 +603,9 @@
 
       }
 
-      Keyboard.prototype.JUMP = false;
+      Keyboard.prototype.UP = false;
+
+      Keyboard.prototype.DOWN = false;
 
       Keyboard.prototype.LEFT = false;
 
@@ -612,7 +638,7 @@
       Keyboard.prototype.checkInput = function(keyEvent) {
         var state;
         switch (keyEvent.getKeyCode()) {
-          case CAAT.Keys.w:
+          case CAAT.Keys.j:
             state = this.getKeyState(keyEvent);
             if (state !== this.currentState) {
               this.currentState = state;
@@ -620,7 +646,11 @@
             }
             break;
           case CAAT.Keys.UP:
-            return this.JUMP = this.getKeyState(keyEvent);
+          case CAAT.Keys.w:
+            return this.UP = this.getKeyState(keyEvent);
+          case CAAT.Keys.DOWN:
+          case CAAT.Keys.s:
+            return this.DOWN = this.getKeyState(keyEvent);
           case CAAT.Keys.LEFT:
           case CAAT.Keys.a:
             return this.LEFT = this.getKeyState(keyEvent);
@@ -638,7 +668,11 @@
   namespace("FNT", function(exports) {
     return exports.PhysicsConstants = {
       MOVE_SPEED: 200,
-      JUMP_SPEED: -200
+      JUMP_SPEED: -200,
+      AIR_MOVE_SPEED: 60,
+      ORBIT_SPEED: 100,
+      ORBIT_OFFSET: 6,
+      ORBIT_CHANGE_THRESHOLD: 500
     };
   });
 
@@ -674,8 +708,9 @@
 
       __extends(LevelCollision, _super);
 
-      function LevelCollision(levelModel, useMass, callback) {
+      function LevelCollision(levelModel, keyboard, useMass, callback) {
         this.levelModel = levelModel;
+        this.keyboard = keyboard;
         this.useMass = useMass != null ? useMass : true;
         this.callback = callback != null ? callback : null;
         this._delta = new Vector();
@@ -687,10 +722,16 @@
       };
 
       LevelCollision.prototype.apply = function(p, dt, index) {
-        var dist, inner_perimeter, outer_perimeter, overlap, ring, _i, _len, _ref, _results;
         if (!this.isActive) {
           return;
         }
+        this.handleCollisions(p);
+        return this.applyUserInput(p);
+      };
+
+      LevelCollision.prototype.handleCollisions = function(p) {
+        var delta, dist, inner_perimeter, outer_perimeter, outward_force, overlap, ring, _i, _len, _ref, _results;
+        this.onRing = false;
         _ref = this.levelModel.getRings();
         _results = [];
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
@@ -701,17 +742,47 @@
           inner_perimeter = ring.radius - p.radius;
           if ((inner_perimeter < dist && dist < outer_perimeter)) {
             if (dist > ring.radius) {
+              if (p.pos.y < ring.position.y) {
+                this.onRing = true;
+              }
               overlap = outer_perimeter - dist;
+              delta = this._delta.clone();
+              outward_force = delta.dot(p.vel) / delta.magSq();
+              if (outward_force >= 0) {
+                p.pos.add(p.vel.clone().norm().scale(overlap / 10));
+              } else {
+                p.pos.add(this._delta.norm().scale(overlap));
+              }
             } else {
+              if (p.pos.y > ring.position.y) {
+                this.onRing = true;
+              }
               overlap = inner_perimeter - dist;
+              p.pos.add(this._delta.norm().scale(overlap));
             }
-            p.pos.add(this._delta.norm().scale(overlap));
             _results.push(typeof this.callback === "function" ? this.callback(p, o, overlap) : void 0);
           } else {
             _results.push(void 0);
           }
         }
         return _results;
+      };
+
+      LevelCollision.prototype.applyUserInput = function(p) {
+        var speed;
+        speed = FNT.PhysicsConstants.AIR_MOVE_SPEED;
+        if (this.onRing) {
+          speed = FNT.PhysicsConstants.MOVE_SPEED;
+          if (this.keyboard.JUMP) {
+            p.acc.add(new Vector(0, FNT.PhysicsConstants.JUMP_SPEED));
+          }
+        }
+        if (this.keyboard.LEFT) {
+          p.acc.add(new Vector(-1 * speed, 0));
+        }
+        if (this.keyboard.RIGHT) {
+          return p.acc.add(new Vector(speed, 0));
+        }
       };
 
       return LevelCollision;
@@ -724,30 +795,92 @@
 
 
   namespace("FNT", function(exports) {
-    return exports.RingRiding = (function(_super) {
+    return exports.Orbiter = (function(_super) {
 
-      __extends(RingRiding, _super);
+      __extends(Orbiter, _super);
 
-      function RingRiding(levelModel, useMass, callback) {
+      function Orbiter(levelModel, keyboard, physics, useMass, callback) {
         this.levelModel = levelModel;
+        this.keyboard = keyboard;
+        this.physics = physics;
         this.useMass = useMass != null ? useMass : true;
         this.callback = callback != null ? callback : null;
         this._delta = new Vector();
-        this._ring_to_p = new Vector();
-        this._delta_pos = new Vector();
-        this.OVERLAP = 4;
-        RingRiding.__super__.constructor.apply(this, arguments);
+        this._acceleration = new Vector();
+        this._accumulated_acceleration = new Vector();
+        this.orbit = 0;
+        this.INITIAL_ORBIT_OFFSET = 12;
+        this.MINIMUM_INNER_ORBIT_OFFSET = 6;
+        this.MINIMUM_OUTER_ORBIT_OFFSET = 6;
+        this.ORBIT_CHANGE_PER_SECOND = 6;
+        this.TRACKING_FACTOR = 1.0;
+        Orbiter.__super__.constructor.apply(this, arguments);
         this;
 
       }
 
-      RingRiding.prototype.setActive = function(isActive) {
+      Orbiter.prototype.setActive = function(isActive) {
         this.isActive = isActive;
         return this.ring = null;
       };
 
-      RingRiding.prototype.apply = function(p, dt, index) {
-        var beef, component_perpendicular_to_tangent, currentOverlap, dist, offset, old_dist, _ref, _ref1, _ref2;
+      Orbiter.prototype.applyUserInput = function(p, dt) {
+        var speed;
+        this._acceleration.clear();
+        speed = FNT.PhysicsConstants.ORBIT_SPEED;
+        if (this.keyboard.UP) {
+          this._acceleration.y -= speed;
+        }
+        if (this.keyboard.DOWN) {
+          this._acceleration.y += speed;
+        }
+        if (this.keyboard.RIGHT) {
+          this._acceleration.x += speed;
+        }
+        if (this.keyboard.LEFT) {
+          this._acceleration.x -= speed;
+        }
+        this._accumulated_acceleration.add(this._acceleration);
+        this.adjustOrbitOverTime(p, dt);
+        return p.acc.add(this._acceleration);
+      };
+
+      Orbiter.prototype.adjustOrbitOverTime = function(p, dt) {
+        if (this.orbit > this.ring.radius) {
+          if (this.orbit > (this.ring.radius + this.MINIMUM_OUTER_ORBIT_OFFSET)) {
+            return this.orbit -= dt * this.ORBIT_CHANGE_PER_SECOND;
+          }
+        } else {
+          if (this.orbit < (this.ring.radius - this.MINIMUM_INNER_ORBIT_OFFSET)) {
+            return this.orbit += dt * this.ORBIT_CHANGE_PER_SECOND;
+          }
+        }
+      };
+
+      Orbiter.prototype.adjustOrbit = function(p, acceleration) {
+        var THRESHOLD, orbit_changing_force;
+        this._delta.copy(p.pos).sub(this.ring.position);
+        orbit_changing_force = this._delta.dot(acceleration) / this._delta.magSq();
+        THRESHOLD = FNT.PhysicsConstants.ORBIT_CHANGE_THRESHOLD;
+        if (((-1 * THRESHOLD) < orbit_changing_force && orbit_changing_force < THRESHOLD)) {
+          return;
+        }
+        if (this.orbit > this.ring.radius && orbit_changing_force < 0) {
+          return this.orbit = this.ring.radius - FNT.PhysicsConstants.ORBIT_OFFSET;
+        } else if (this.orbit < this.ring.radius && orbit_changing_force > 0) {
+          return this.orbit = this.ring.radius + FNT.PhysicsConstants.ORBIT_OFFSET;
+        }
+      };
+
+      Orbiter.prototype.applyTracking = function(p) {
+        var dist, force;
+        dist = this.distanceBetween(p, this.ring) + 0.000001;
+        force = (this.orbit - dist) * this.TRACKING_FACTOR;
+        return p.pos.add(this._delta.norm().scale(force));
+      };
+
+      Orbiter.prototype.apply = function(p, dt, index) {
+        var _ref;
         if (!this.isActive) {
           return;
         }
@@ -757,102 +890,38 @@
         if (!(this.ring != null)) {
           return;
         }
-        dist = this.distanceBetween(p, this.ring);
-        old_dist = new Vector();
-        old_dist.copy(p.old).dist(this.ring.position);
-        if ((old_dist < (_ref1 = this.ring.radius) && _ref1 < dist) || (dist < (_ref2 = this.ring.radius) && _ref2 < old_dist)) {
-          beef = true;
-          console.log("CROSSING OVER!");
-        }
-        if (dist < this.ring.radius) {
-          currentOverlap = dist + p.radius - this.ring.radius;
-          if (currentOverlap > 7) {
-            console.log("Big overlap: " + currentOverlap + " " + beef);
-          }
-          offset = this.OVERLAP - currentOverlap;
-          p.pos.add(this._delta.norm().scale(offset));
-        } else {
-          currentOverlap = this.ring.radius + p.radius - dist;
-          if (currentOverlap > 7) {
-            console.log("Big overlap: " + currentOverlap + " " + beef);
-          }
-          offset = currentOverlap - this.OVERLAP;
-          p.pos.add(this._delta.norm().scale(offset));
-        }
-        this._ring_to_p.copy(p.pos).sub(this.ring.position).norm();
-        this._delta_pos.copy(p.pos).sub(p.old.pos);
-        component_perpendicular_to_tangent = Vector.project(this._ring_to_p, this._delta_pos);
-        if (component_perpendicular_to_tangent.mag() > 2) {
-          console.log("MAKING A BIG ADJUSTMENT");
-        }
-        return p.old.pos.add(component_perpendicular_to_tangent);
+        this.applyTracking(p);
+        return this.applyUserInput(p, dt);
       };
 
-      RingRiding.prototype.findAttachableRing = function(p) {
-        var r, _i, _len, _ref;
+      Orbiter.prototype.findAttachableRing = function(p) {
+        var dist, inner_perimeter, outer_perimeter, r, _i, _len, _ref;
         _ref = this.levelModel.getRings();
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           r = _ref[_i];
-          if (this.overlapsWithRing(p, r)) {
-            p.acc.clear();
+          dist = this.distanceBetween(p, r);
+          outer_perimeter = r.radius + p.radius;
+          inner_perimeter = r.radius - p.radius;
+          if ((inner_perimeter < dist && dist < outer_perimeter)) {
             this.ring = r;
+            this._accumulated_acceleration.clear();
+            if (dist < this.ring.radius) {
+              this.orbit = this.ring.radius - this.INITIAL_ORBIT_OFFSET;
+            } else {
+              this.orbit = this.ring.radius + this.INITIAL_ORBIT_OFFSET;
+            }
             return this.ring;
           }
         }
         return null;
       };
 
-      RingRiding.prototype.overlapsWithRing = function(p, ring) {
-        var dist, inner_perimeter, outer_perimeter;
-        dist = this.distanceBetween(p, ring);
-        outer_perimeter = ring.radius + p.radius;
-        inner_perimeter = ring.radius - p.radius;
-        return (inner_perimeter < dist && dist < outer_perimeter);
-      };
-
-      RingRiding.prototype.distanceBetween = function(a, b) {
+      Orbiter.prototype.distanceBetween = function(a, b) {
         this._delta.copy(a.pos).sub(b.position);
         return this._delta.mag();
       };
 
-      return RingRiding;
-
-    })(Behaviour);
-  });
-
-  /* The InputControlled Behaviour applies user input to the player's particle
-  */
-
-
-  namespace("FNT", function(exports) {
-    return exports.InputControlled = (function(_super) {
-
-      __extends(InputControlled, _super);
-
-      function InputControlled() {
-        InputControlled.__super__.constructor.apply(this, arguments);
-        this;
-
-      }
-
-      InputControlled.prototype.create = function(keyboard) {
-        this.keyboard = keyboard;
-        return this;
-      };
-
-      InputControlled.prototype.apply = function(p, dt, index) {
-        if (this.keyboard.JUMP) {
-          p.acc.add(new Vector(0, FNT.PhysicsConstants.JUMP_SPEED));
-        }
-        if (this.keyboard.LEFT) {
-          p.acc.add(new Vector(-1 * FNT.PhysicsConstants.MOVE_SPEED, 0));
-        }
-        if (this.keyboard.RIGHT) {
-          return p.acc.add(new Vector(FNT.PhysicsConstants.MOVE_SPEED, 0));
-        }
-      };
-
-      return InputControlled;
+      return Orbiter;
 
     })(Behaviour);
   });
@@ -880,13 +949,12 @@
           return _this.onStateChanged(inAlternateState);
         });
         this.setRadius(this.playerModel.radius);
-        this.inputControlled = new FNT.InputControlled().create(this.keyboard);
         this.playerModel.addObserver(this);
         return this;
       };
 
       PlayerParticle.prototype.onStateChanged = function(inAlternateState) {
-        this.ringRiding.setActive(inAlternateState);
+        this.orbiter.setActive(inAlternateState);
         return this.levelCollision.setActive(!inAlternateState);
       };
 
@@ -899,13 +967,12 @@
 
       PlayerParticle.prototype.spawn = function() {
         this.moveTo(new Vector(this.playerModel.position.x, this.playerModel.position.y));
-        this.levelCollision = new FNT.LevelCollision(this.playerModel.level);
-        this.ringRiding = new FNT.RingRiding(this.playerModel.level);
-        this.behaviours.push(this.ringRiding);
-        this.behaviours.push(this.inputControlled);
+        this.levelCollision = new FNT.LevelCollision(this.playerModel.level, this.keyboard);
+        this.orbiter = new FNT.Orbiter(this.playerModel.level, this.keyboard);
+        this.behaviours.push(this.orbiter);
         this.behaviours.push(this.levelCollision);
         this.behaviours.push(this.couplePosition);
-        this.ringRiding.setActive(false);
+        this.orbiter.setActive(false);
         return this.levelCollision.setActive(true);
       };
 
