@@ -5,7 +5,7 @@ namespace "FNT", (exports) ->
       super()
       @
       
-    create: (ring) ->
+    create: (@ring) ->
       @setDiameter(ring.diameter)
       @setPosition(ring.position)
   
@@ -13,7 +13,21 @@ namespace "FNT", (exports) ->
       @setFillStyle('#AAA')
       @setAlpha(0.5)
   
-      @ring = ring
+      # Register for Ring Events
+      @ring.addObserver(this)
   
       @
+      
+    handleEvent: (event) ->
+      switch event.type
+        when FNT.RingEvents.ORBITED
+          @orbit(event.data)
+          
+    orbit: (orbited) ->
+      if orbited
+        @setLineWidth(2)
+        @setFillStyle('yellow')
+      else
+        @setLineWidth(1)
+        @setFillStyle('#AAA')
   

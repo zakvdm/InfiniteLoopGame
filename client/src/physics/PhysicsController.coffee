@@ -4,7 +4,7 @@ namespace "FNT", (exports) ->
   class exports.PhysicsController
     constructor: ->
     
-    create: (@gameModel) ->
+    create: (@gameModel, @keyboard) ->
       @physics = new Physics(new Verlet())
       
       #@attraction = new Attraction(new Vector(500, 200), 1200, 1200)
@@ -13,7 +13,7 @@ namespace "FNT", (exports) ->
       @gravity = new ConstantForce(new Vector 0.0, 150.0)
       @physics.behaviours.push @gravity
 
-      @initPlayerPhysics(@gameModel.player)
+      @initPlayerPhysics(@gameModel.player, @gameModel.level)
 
       @gameModel.addObserver(@)
       @
@@ -21,7 +21,7 @@ namespace "FNT", (exports) ->
     step: ->
       @physics.step()
       
-    initPlayerPhysics: (playerModel) ->
-      @player = new FNT.PlayerParticle().create(playerModel)
+    initPlayerPhysics: (playerModel, levelModel) ->
+      @player = new FNT.PlayerParticle().create(playerModel, levelModel, @keyboard)
       
       @physics.particles.push(@player)

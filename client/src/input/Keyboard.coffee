@@ -7,6 +7,7 @@ namespace "FNT", (exports) ->
   
   exports.Keys =
     ORBIT:   "FNT_KEYS_ORBIT"
+    RESET:   "FNT_KEYS_RESET"
   
   class exports.Keyboard
     constructor: () ->
@@ -25,7 +26,7 @@ namespace "FNT", (exports) ->
       RESET:
         false
       
-    create: () ->
+    create: ->
       ###
        # Register a CAAT key listener function
       ###
@@ -55,10 +56,16 @@ namespace "FNT", (exports) ->
     checkInput: (keyEvent) ->
       switch keyEvent.getKeyCode()
         when CAAT.Keys.j
-          state = @getKeyState(keyEvent) # We are in the alternate state as long as the key is pressed
+          state = @getKeyState(keyEvent)
           if state != @currentState.ORBIT
             @currentState.ORBIT = state
             @notifyListeners(FNT.Keys.ORBIT, @toKeyEvent(state))
+          
+        when CAAT.Keys.r
+          state = @getKeyState(keyEvent)
+          if state != @currentState.RESET
+            @currentState.RESET = state
+            @notifyListeners(FNT.Keys.RESET, @toKeyEvent(state))
           
         when CAAT.Keys.UP, CAAT.Keys.w
           @UP = @getKeyState(keyEvent)

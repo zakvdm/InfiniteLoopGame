@@ -7,20 +7,20 @@ namespace "FNT", (exports) ->
     @build: (director) ->
       gameModel = @createGameModel()
       gameController = @createGameController(gameModel)
-      gameView = @createGameView(director, gameModel, gameController)
-      return gameView
+      return @createGameView(director, gameModel, gameController)
     
     @createGameModel: ->
       levelModel = FNT.LevelFactory.build()
       playerModel = FNT.PlayerFactory.build()
       
-      gameModel = new FNT.GameModel(levelModel, playerModel)
-      return gameModel
+      return new FNT.GameModel(levelModel, playerModel)
     
     @createGameController: (gameModel) ->
-      physics = new FNT.PhysicsController().create(gameModel)
-      gameController = new FNT.GameController(physics)
-      return gameController
+      keyboard = new FNT.Keyboard().create()
+      
+      physics = new FNT.PhysicsController().create(gameModel, keyboard)
+      
+      return new FNT.GameController(gameModel, physics, keyboard)
       
     @createGameView: (director, gameModel, gameController) ->
       gameScene = FNT.GameSceneActorFactory.build(director, gameModel, gameController)

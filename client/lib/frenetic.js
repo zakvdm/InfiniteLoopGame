@@ -211,8 +211,7 @@
       */
 
 
-      PlayerModel.prototype.spawn = function(level, spawnLocation) {
-        this.level = level;
+      PlayerModel.prototype.spawn = function(spawnLocation) {
         this.position.x = spawnLocation.x;
         this.position.y = spawnLocation.y;
         return this.notifyObservers(FNT.PlayerEvents.SPAWN, this);
@@ -348,7 +347,7 @@
           case FNT.STATE_CHANGE_EVENT:
           case event.data === FNT.LevelStates.LOADED:
           case event.source === this.level:
-            return this.onLevelLoaded();
+            return this.startLevel();
         }
       };
 
@@ -362,8 +361,8 @@
         return this.level.load(this.currentLevelData.ringData);
       };
 
-      GameModel.prototype.onLevelLoaded = function() {
-        return this.player.spawn(this.level, this.currentLevelData.spawnLocation);
+      GameModel.prototype.startLevel = function() {
+        return this.player.spawn(this.currentLevelData.spawnLocation);
       };
 
       return GameModel;
@@ -723,8 +722,14 @@
   namespace("FNT", function(exports) {
     return exports.GameController = (function() {
 
-      function GameController(physicsController) {
+      function GameController(gameModel, physicsController, keyboard) {
+        var _this = this;
+        this.gameModel = gameModel;
         this.physicsController = physicsController;
+        this.keyboard = keyboard;
+        this.keyboard.addListener(FNT.Keys.RESET, FNT.KeyDown, function() {
+          return _this.reset();
+        });
         this;
 
       }
@@ -733,6 +738,10 @@
         if (this.physicsController != null) {
           return this.physicsController.step();
         }
+      };
+
+      GameController.prototype.reset = function() {
+        return this.gameModel.startLevel();
       };
 
       return GameController;
@@ -748,7 +757,8 @@
     exports.KeyUp = "FNT_KEY_UP_EVENT";
     exports.KeyDown = "FNT_KEY_DOWN_EVENT";
     exports.Keys = {
-      ORBIT: "FNT_KEYS_ORBIT"
+      ORBIT: "FNT_KEYS_ORBIT",
+      RESET: "FNT_KEYS_RESET"
     };
     return exports.Keyboard = (function() {
 
@@ -829,6 +839,13 @@
             if (state !== this.currentState.ORBIT) {
               this.currentState.ORBIT = state;
               return this.notifyListeners(FNT.Keys.ORBIT, this.toKeyEvent(state));
+            }
+            break;
+          case CAAT.Keys.r:
+            state = this.getKeyState(keyEvent);
+            if (state !== this.currentState.RESET) {
+              this.currentState.RESET = state;
+              return this.notifyListeners(FNT.Keys.RESET, this.toKeyEvent(state));
             }
             break;
           case CAAT.Keys.UP:
@@ -1113,13 +1130,12 @@
 
       }
 
-      PlayerParticle.prototype.create = function(playerModel) {
+      PlayerParticle.prototype.create = function(playerModel, levelModel, keyboard) {
         var _this = this;
         this.playerModel = playerModel;
+        this.levelModel = levelModel;
+        this.keyboard = keyboard;
         this.couplePosition = new FNT.CouplePosition(this.playerModel);
-        this.keyboard = new FNT.Keyboard().create(function(inAlternateState) {
-          return _this.onStateChanged(inAlternateState);
-        });
         this.keyboard.addListener(FNT.Keys.ORBIT, FNT.KeyDown, function() {
           return _this.setOrbitState(true);
         });
@@ -1127,6 +1143,13 @@
           return _this.setOrbitState(false);
         });
         this.setRadius(this.playerModel.radius);
+        this.levelCollision = new FNT.LevelCollision(this.levelModel, this.keyboard);
+        this.orbiter = new FNT.Orbiter(this.levelModel, this.keyboard, this.onOrbitStart);
+        this.levelCollision.setActive(false);
+        this.orbiter.setActive(false);
+        this.behaviours.push(this.orbiter);
+        this.behaviours.push(this.levelCollision);
+        this.behaviours.push(this.couplePosition);
         this.playerModel.addObserver(this);
         return this;
       };
@@ -1139,7 +1162,7 @@
 
       PlayerParticle.prototype.clearState = function() {
         this.playerModel.state.set(FNT.PlayerStates.NORMAL);
-        return this.playerModel.level.resetAllRings();
+        return this.levelModel.resetAllRings();
       };
 
       PlayerParticle.prototype.handleEvent = function(event) {
@@ -1156,11 +1179,6 @@
 
       PlayerParticle.prototype.spawn = function() {
         this.moveTo(new Vector(this.playerModel.position.x, this.playerModel.position.y));
-        this.levelCollision = new FNT.LevelCollision(this.playerModel.level, this.keyboard);
-        this.orbiter = new FNT.Orbiter(this.playerModel.level, this.keyboard, this.onOrbitStart);
-        this.behaviours.push(this.orbiter);
-        this.behaviours.push(this.levelCollision);
-        this.behaviours.push(this.couplePosition);
         this.orbiter.setActive(false);
         return this.levelCollision.setActive(true);
       };
@@ -1179,12 +1197,13 @@
 
       function PhysicsController() {}
 
-      PhysicsController.prototype.create = function(gameModel) {
+      PhysicsController.prototype.create = function(gameModel, keyboard) {
         this.gameModel = gameModel;
+        this.keyboard = keyboard;
         this.physics = new Physics(new Verlet());
         this.gravity = new ConstantForce(new Vector(0.0, 150.0));
         this.physics.behaviours.push(this.gravity);
-        this.initPlayerPhysics(this.gameModel.player);
+        this.initPlayerPhysics(this.gameModel.player, this.gameModel.level);
         this.gameModel.addObserver(this);
         return this;
       };
@@ -1193,8 +1212,8 @@
         return this.physics.step();
       };
 
-      PhysicsController.prototype.initPlayerPhysics = function(playerModel) {
-        this.player = new FNT.PlayerParticle().create(playerModel);
+      PhysicsController.prototype.initPlayerPhysics = function(playerModel, levelModel) {
+        this.player = new FNT.PlayerParticle().create(playerModel, levelModel, this.keyboard);
         return this.physics.particles.push(this.player);
       };
 
@@ -1213,26 +1232,24 @@
       }
 
       GameFactory.build = function(director) {
-        var gameController, gameModel, gameView;
+        var gameController, gameModel;
         gameModel = this.createGameModel();
         gameController = this.createGameController(gameModel);
-        gameView = this.createGameView(director, gameModel, gameController);
-        return gameView;
+        return this.createGameView(director, gameModel, gameController);
       };
 
       GameFactory.createGameModel = function() {
-        var gameModel, levelModel, playerModel;
+        var levelModel, playerModel;
         levelModel = FNT.LevelFactory.build();
         playerModel = FNT.PlayerFactory.build();
-        gameModel = new FNT.GameModel(levelModel, playerModel);
-        return gameModel;
+        return new FNT.GameModel(levelModel, playerModel);
       };
 
       GameFactory.createGameController = function(gameModel) {
-        var gameController, physics;
-        physics = new FNT.PhysicsController().create(gameModel);
-        gameController = new FNT.GameController(physics);
-        return gameController;
+        var keyboard, physics;
+        keyboard = new FNT.Keyboard().create();
+        physics = new FNT.PhysicsController().create(gameModel, keyboard);
+        return new FNT.GameController(gameModel, physics, keyboard);
       };
 
       GameFactory.createGameView = function(director, gameModel, gameController) {
