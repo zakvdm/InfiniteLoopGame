@@ -38,19 +38,24 @@
        #   The Event is an object with fields:
        #     eventType | eventData
        # @param eventType : a string indicating the event type
-       # @param data an object with event data. Each event type will have its own data structure.
+       # @param eventData an object with event data. Each event type will have its own data structure.
+       # @param eventSource the object firing the event
       */
 
 
-      ObservableModel.prototype.notifyObservers = function(eventType, eventData) {
+      ObservableModel.prototype.notifyObservers = function(eventType, eventData, eventSource) {
         var observer, _i, _len, _ref, _results;
+        if (eventSource == null) {
+          eventSource = this;
+        }
         _ref = this.observers;
         _results = [];
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           observer = _ref[_i];
           _results.push(observer.handleEvent({
             type: eventType,
-            data: eventData
+            data: eventData,
+            source: eventSource
           }));
         }
         return _results;
@@ -89,13 +94,13 @@
                 y: 512,
                 diameter: 100
               }, {
-                x: 750,
-                y: 800,
-                diameter: 420
-              }, {
                 x: 850,
-                y: 800,
-                diameter: 200
+                y: 600,
+                diameter: 320
+              }, {
+                x: 950,
+                y: 500,
+                diameter: 120
               }, {
                 x: 600,
                 y: 300,
@@ -152,9 +157,29 @@
 
   namespace("FNT", function(exports) {
     exports.PlayerEvents = {
+      STATE_CHANGE: "player_event_state_change",
       SPAWN: "player_event_spawn",
       NEW_POSITION: "player_event_new_position"
     };
+    exports.PlayerStates = {
+      NORMAL: "player_state_normal",
+      ORBITING: "player_state_orbiting"
+    };
+    exports.PlayerFactory = (function() {
+
+      function PlayerFactory() {}
+
+      PlayerFactory.build = function() {
+        var player, stateMachine;
+        player = new FNT.PlayerModel().create();
+        stateMachine = new FNT.StateMachine(player);
+        player.state = stateMachine;
+        return player;
+      };
+
+      return PlayerFactory;
+
+    })();
     return exports.PlayerModel = (function(_super) {
 
       __extends(PlayerModel, _super);
@@ -167,7 +192,9 @@
 
       PlayerModel.prototype.radius = 12;
 
-      PlayerModel.prototype.color = "#F00";
+      PlayerModel.prototype.COLOR = "#F00";
+
+      PlayerModel.prototype.ORBITING_COLOR = "orange";
 
       PlayerModel.prototype.create = function() {
         this.position = new CAAT.Point(0, 0);
@@ -197,10 +224,16 @@
   });
 
   namespace("FNT", function(exports) {
-    return exports.RingModel = (function() {
+    exports.RingEvents = {
+      ORBITED: "ring_event_orbited"
+    };
+    return exports.RingModel = (function(_super) {
+
+      __extends(RingModel, _super);
 
       function RingModel() {
         this.position = new CAAT.Point(0, 0);
+        RingModel.__super__.constructor.call(this);
         this;
 
       }
@@ -214,15 +247,38 @@
         return this;
       };
 
+      RingModel.prototype.setOrbited = function(orbited) {
+        this.orbited = orbited;
+        return this.notifyObservers(FNT.RingEvents.ORBITED, this.orbited);
+      };
+
       return RingModel;
 
-    })();
+    })(FNT.ObservableModel);
   });
 
   namespace("FNT", function(exports) {
     exports.LevelEvents = {
       LOAD: "level_event_load"
     };
+    exports.LevelStates = {
+      LOADED: "level_state_loaded"
+    };
+    exports.LevelFactory = (function() {
+
+      function LevelFactory() {}
+
+      LevelFactory.build = function() {
+        var level, stateMachine;
+        level = new FNT.LevelModel().create();
+        stateMachine = new FNT.StateMachine(level);
+        level.state = stateMachine;
+        return level;
+      };
+
+      return LevelFactory;
+
+    })();
     return exports.LevelModel = (function(_super) {
 
       __extends(LevelModel, _super);
@@ -251,33 +307,35 @@
         return this.rings;
       };
 
+      LevelModel.prototype.resetAllRings = function() {
+        var ring, _i, _len, _ref, _results;
+        _ref = this.rings;
+        _results = [];
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          ring = _ref[_i];
+          _results.push(ring.setOrbited(false));
+        }
+        return _results;
+      };
+
       return LevelModel;
 
     })(FNT.ObservableModel);
   });
 
   namespace("FNT", function(exports) {
-    exports.GameModelEvents = {
-      UPDATE_STATUS: "update_status_event",
-      CREATE_LEVEL: "create_level_event",
-      ADDED_PLAYER: "added_player_event"
-    };
     return exports.GameModel = (function(_super) {
 
       __extends(GameModel, _super);
 
-      function GameModel() {
+      function GameModel(level, player) {
+        this.level = level;
+        this.player = player;
+        this.level.addObserver(this);
         GameModel.__super__.constructor.call(this);
         this;
 
       }
-
-      GameModel.prototype.create = function() {
-        this.initPhysics();
-        this.createLevel();
-        this.createPlayer();
-        return this;
-      };
 
       GameModel.prototype.step = function() {
         if (this.physicsController != null) {
@@ -285,14 +343,13 @@
         }
       };
 
-      GameModel.prototype.createPlayer = function() {
-        this.player = new FNT.PlayerModel().create();
-        return this.notifyObservers(FNT.GameModelEvents.ADDED_PLAYER, this.player);
-      };
-
-      GameModel.prototype.createLevel = function() {
-        this.level = new FNT.LevelModel().create();
-        return this.notifyObservers(FNT.GameModelEvents.CREATE_LEVEL, this.level);
+      GameModel.prototype.handleEvent = function(event) {
+        switch (event.type) {
+          case FNT.STATE_CHANGE_EVENT:
+          case event.data === FNT.LevelStates.LOADED:
+          case event.source === this.level:
+            return this.onLevelLoaded();
+        }
       };
 
       GameModel.prototype.startGame = function(gameMode) {
@@ -300,15 +357,9 @@
         return this.loadLevel(0);
       };
 
-      GameModel.prototype.initPhysics = function() {
-        this.physicsController = new FNT.PhysicsController().create(this);
-        return this;
-      };
-
       GameModel.prototype.loadLevel = function(levelIndex) {
         this.currentLevelData = FNT.GameModes.quest.levelData[levelIndex];
-        this.level.load(this.currentLevelData.ringData);
-        return this.onLevelLoaded();
+        return this.level.load(this.currentLevelData.ringData);
       };
 
       GameModel.prototype.onLevelLoaded = function() {
@@ -316,6 +367,33 @@
       };
 
       return GameModel;
+
+    })(FNT.ObservableModel);
+  });
+
+  namespace("FNT", function(exports) {
+    exports.STATE_CHANGE_EVENT = "state_change";
+    return exports.StateMachine = (function(_super) {
+
+      __extends(StateMachine, _super);
+
+      function StateMachine(entity) {
+        this.entity = entity;
+        StateMachine.__super__.constructor.call(this);
+        this.state = null;
+        this;
+
+      }
+
+      StateMachine.prototype.set = function(newState) {
+        if (newState === this.state) {
+          return;
+        }
+        this.state = newState;
+        return this.entity.notifyObservers(FNT.STATE_CHANGE_EVENT, this.state);
+      };
+
+      return StateMachine;
 
     })(FNT.ObservableModel);
   });
@@ -366,14 +444,15 @@
       }
 
       PlayerActor.prototype.create = function(scene, playerModel) {
-        this.setVisible(false);
-        this.setDiameter(playerModel.diameter);
-        this.setPosition(playerModel.position);
-        this.setStrokeStyle('#0');
-        this.setFillStyle(playerModel.color);
         this.playerModel = playerModel;
+        this.setVisible(false);
+        this.setDiameter(this.playerModel.diameter);
+        this.setPosition(this.playerModel.position);
+        this.setLineWidth(2);
+        this.setStrokeStyle('#0');
+        this.setFillStyle(this.playerModel.COLOR);
         this.prepareSpawnBehavior();
-        playerModel.addObserver(this);
+        this.playerModel.addObserver(this);
         scene.addChild(this);
         return this;
       };
@@ -389,6 +468,18 @@
             return this.spawn();
           case FNT.PlayerEvents.NEW_POSITION:
             return this.setPosition(this.playerModel.position);
+          case FNT.STATE_CHANGE_EVENT:
+          case event.source === this.playerModel:
+            return this.handleStateChange(event.data);
+        }
+      };
+
+      PlayerActor.prototype.handleStateChange = function(newState) {
+        switch (newState) {
+          case FNT.PlayerStates.NORMAL:
+            return this.setFillStyle(this.playerModel.COLOR);
+          case FNT.PlayerStates.ORBITING:
+            return this.setFillStyle(this.playerModel.ORBITING_COLOR);
         }
       };
 
@@ -416,13 +507,31 @@
       }
 
       RingActor.prototype.create = function(ring) {
+        this.ring = ring;
         this.setDiameter(ring.diameter);
         this.setPosition(ring.position);
         this.setStrokeStyle('#0');
         this.setFillStyle('#AAA');
         this.setAlpha(0.5);
-        this.ring = ring;
+        this.ring.addObserver(this);
         return this;
+      };
+
+      RingActor.prototype.handleEvent = function(event) {
+        switch (event.type) {
+          case FNT.RingEvents.ORBITED:
+            return this.orbit(event.data);
+        }
+      };
+
+      RingActor.prototype.orbit = function(orbited) {
+        if (orbited) {
+          this.setLineWidth(2);
+          return this.setFillStyle('yellow');
+        } else {
+          this.setLineWidth(1);
+          return this.setFillStyle('#AAA');
+        }
       };
 
       return RingActor;
@@ -431,18 +540,18 @@
   });
 
   namespace("FNT", function(exports) {
-    return exports.LevelContainer = (function(_super) {
+    return exports.LevelActorContainer = (function(_super) {
 
-      __extends(LevelContainer, _super);
+      __extends(LevelActorContainer, _super);
 
-      function LevelContainer() {
-        LevelContainer.__super__.constructor.call(this);
+      function LevelActorContainer() {
+        LevelActorContainer.__super__.constructor.call(this);
         this.ringActors = [];
         this;
 
       }
 
-      LevelContainer.prototype.create = function(scene, levelModel) {
+      LevelActorContainer.prototype.create = function(scene, levelModel) {
         this.scene = scene;
         this.levelModel = levelModel;
         this.levelModel.addObserver(this);
@@ -450,14 +559,16 @@
         return this;
       };
 
-      LevelContainer.prototype.handleEvent = function(event) {
-        if (event.type === FNT.LevelEvents.LOAD) {
-          return this.loadLevel();
+      LevelActorContainer.prototype.handleEvent = function(event) {
+        switch (event.type) {
+          case FNT.LevelEvents.LOAD:
+            return this.loadLevel();
         }
       };
 
-      LevelContainer.prototype.loadLevel = function() {
+      LevelActorContainer.prototype.loadLevel = function() {
         var ringActor, ringModel, _i, _j, _len, _len1, _ref, _ref1, _results;
+        this.completedRingActors = 0;
         _ref = this.levelModel.getRings();
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           ringModel = _ref[_i];
@@ -472,7 +583,7 @@
         return _results;
       };
 
-      LevelContainer.prototype._create = function(ringModel) {
+      LevelActorContainer.prototype._create = function(ringModel) {
         var ringActor;
         ringActor = new FNT.RingActor().create(ringModel);
         ringActor.setVisible(false);
@@ -480,8 +591,8 @@
         return this.addChild(ringActor);
       };
 
-      LevelContainer.prototype._animate = function(ringActor) {
-        this._animateInUsingScale(ringActor, this.scene.time + Math.random() * 500, 1500, 0.1, 1);
+      LevelActorContainer.prototype._animate = function(ringActor) {
+        this._animateInUsingScale(ringActor, this.scene.time, 1000, 0.1, 1);
         return ringActor.setVisible(true);
       };
 
@@ -490,8 +601,9 @@
       */
 
 
-      LevelContainer.prototype._animateInUsingScale = function(actor, startTime, endTime, startScale, endScale) {
-        var scaleBehavior;
+      LevelActorContainer.prototype._animateInUsingScale = function(actor, startTime, endTime, startScale, endScale) {
+        var scaleBehavior,
+          _this = this;
         scaleBehavior = new CAAT.ScaleBehavior();
         scaleBehavior.anchor = CAAT.Actor.prototype.ANCHOR_CENTER;
         actor.scaleX = actor.scaleY = scaleBehavior.startScaleX = scaleBehavior.startScaleY = startScale;
@@ -499,10 +611,22 @@
         scaleBehavior.setFrameTime(startTime, startTime + endTime);
         scaleBehavior.setCycle(false);
         scaleBehavior.setInterpolator(new CAAT.Interpolator().createBounceOutInterpolator(false));
-        return actor.addBehavior(scaleBehavior);
+        actor.addBehavior(scaleBehavior);
+        return scaleBehavior.addListener({
+          behaviorExpired: function(behavior, time, ringActor) {
+            return _this._doneAnimating(actor);
+          }
+        });
       };
 
-      return LevelContainer;
+      LevelActorContainer.prototype._doneAnimating = function(ringActor) {
+        this.completedRingActors += 1;
+        if (this.completedRingActors >= this.ringActors.length) {
+          return this.levelModel.state.set(FNT.LevelStates.LOADED);
+        }
+      };
+
+      return LevelActorContainer;
 
     })(CAAT.ActorContainer);
   });
@@ -538,6 +662,19 @@
 
 
   namespace("FNT", function(exports) {
+    exports.GameSceneActorFactory = (function() {
+
+      function GameSceneActorFactory() {}
+
+      GameSceneActorFactory.build = function(director, gameModel, gameController) {
+        var gameActor;
+        gameActor = new FNT.GameSceneActor().create(director, gameModel, gameController);
+        return gameActor;
+      };
+
+      return GameSceneActorFactory;
+
+    })();
     return exports.GameSceneActor = (function() {
 
       function GameSceneActor() {
@@ -548,45 +685,57 @@
       /*
            # Creates the main game Scene.
            # @param director a CAAT.Director instance.
+           # @param gameModel The FNT.GameModel instance that this Actor will represent.
       */
 
 
-      GameSceneActor.prototype.create = function(director) {
+      GameSceneActor.prototype.create = function(director, gameModel, gameController) {
         var _this = this;
         this.director = director;
-        this.gameModel = new FNT.GameModel().addObserver(this);
+        this.gameModel = gameModel;
+        this.gameController = gameController;
         this.directorScene = director.createScene();
         this.directorScene.activated = function() {
           return _this.gameModel.startGame(FNT.GameModes.quest);
         };
         this.directorScene.onRenderStart = function(deltaTime) {
-          return _this.gameModel.step();
+          return _this.gameController.step();
         };
         this.backgroundContainer = new FNT.BackgroundContainer().create(this.directorScene, director.width, director.height);
-        this.gameModel.create();
+        this.createLevel(this.gameModel.level);
+        this.createPlayer(this.gameModel.player);
         return this;
       };
 
       GameSceneActor.prototype.createLevel = function(levelModel) {
-        return this.levelContainer = new FNT.LevelContainer().create(this.directorScene, levelModel).setSize(this.director.width, this.director.height).setLocation(0, 0);
+        return this.levelActorContainer = new FNT.LevelActorContainer().create(this.directorScene, levelModel).setSize(this.director.width, this.director.height).setLocation(0, 0);
       };
 
       GameSceneActor.prototype.createPlayer = function(player) {
         return this.playerActor = new FNT.PlayerActor().create(this.directorScene, player);
       };
 
-      GameSceneActor.prototype.handleEvent = function(event) {
-        switch (event.type) {
-          case FNT.GameModelEvents.ADDED_PLAYER:
-            return this.createPlayer(event.data);
-          case FNT.GameModelEvents.CREATE_LEVEL:
-            return this.createLevel(event.data);
-          default:
-            return console.log("UNKNOWN EVENT TYPE! " + event.type);
+      return GameSceneActor;
+
+    })();
+  });
+
+  namespace("FNT", function(exports) {
+    return exports.GameController = (function() {
+
+      function GameController(physicsController) {
+        this.physicsController = physicsController;
+        this;
+
+      }
+
+      GameController.prototype.step = function() {
+        if (this.physicsController != null) {
+          return this.physicsController.step();
         }
       };
 
-      return GameSceneActor;
+      return GameController;
 
     })();
   });
@@ -596,6 +745,11 @@
 
 
   namespace("FNT", function(exports) {
+    exports.KeyUp = "FNT_KEY_UP_EVENT";
+    exports.KeyDown = "FNT_KEY_DOWN_EVENT";
+    exports.Keys = {
+      ORBIT: "FNT_KEYS_ORBIT"
+    };
     return exports.Keyboard = (function() {
 
       function Keyboard() {
@@ -611,19 +765,43 @@
 
       Keyboard.prototype.RIGHT = false;
 
-      Keyboard.prototype.currentState = false;
+      Keyboard.prototype.listeners = {};
 
-      Keyboard.prototype.create = function(modeChangedCallback) {
-        var _this = this;
-        this.modeChangedCallback = modeChangedCallback;
+      Keyboard.prototype.currentState = {
+        ORBIT: false,
+        RESET: false
+      };
+
+      Keyboard.prototype.create = function() {
         /*
                # Register a CAAT key listener function
         */
 
+        var _this = this;
         CAAT.registerKeyListener(function(keyEvent) {
           return _this.checkInput(keyEvent);
         });
         return this;
+      };
+
+      Keyboard.prototype.addListener = function(key, keyEvent, callback) {
+        if (!(this.listeners[key] != null)) {
+          this.listeners[key] = {};
+          this.listeners[key][FNT.KeyUp] = [];
+          this.listeners[key][FNT.KeyDown] = [];
+        }
+        return this.listeners[key][keyEvent].push(callback);
+      };
+
+      Keyboard.prototype.notifyListeners = function(key, keyEvent) {
+        var callback, _i, _len, _ref, _results;
+        _ref = this.listeners[key][keyEvent];
+        _results = [];
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          callback = _ref[_i];
+          _results.push(callback());
+        }
+        return _results;
       };
 
       Keyboard.prototype.getKeyState = function(keyEvent) {
@@ -635,14 +813,22 @@
         }
       };
 
+      Keyboard.prototype.toKeyEvent = function(keyDownAction) {
+        if (keyDownAction) {
+          return FNT.KeyDown;
+        } else {
+          return FNT.KeyUp;
+        }
+      };
+
       Keyboard.prototype.checkInput = function(keyEvent) {
         var state;
         switch (keyEvent.getKeyCode()) {
           case CAAT.Keys.j:
             state = this.getKeyState(keyEvent);
-            if (state !== this.currentState) {
-              this.currentState = state;
-              return this.modeChangedCallback(state);
+            if (state !== this.currentState.ORBIT) {
+              this.currentState.ORBIT = state;
+              return this.notifyListeners(FNT.Keys.ORBIT, this.toKeyEvent(state));
             }
             break;
           case CAAT.Keys.UP:
@@ -670,9 +856,12 @@
       MOVE_SPEED: 200,
       JUMP_SPEED: -200,
       AIR_MOVE_SPEED: 60,
-      ORBIT_SPEED: 100,
-      ORBIT_OFFSET: 6,
-      ORBIT_CHANGE_THRESHOLD: 500
+      ORBIT_SPEED: 200,
+      ORBIT_ATTACH_THRESHOLD: 5,
+      INITIAL_ORBIT_OFFSET: 12,
+      MINIMUM_INNER_ORBIT_OFFSET: 6,
+      MINIMUM_OUTER_ORBIT_OFFSET: 6,
+      ORBIT_CHANGE_PER_SECOND: 6
     };
   });
 
@@ -799,20 +988,14 @@
 
       __extends(Orbiter, _super);
 
-      function Orbiter(levelModel, keyboard, physics, useMass, callback) {
+      function Orbiter(levelModel, keyboard, callback) {
         this.levelModel = levelModel;
         this.keyboard = keyboard;
-        this.physics = physics;
-        this.useMass = useMass != null ? useMass : true;
         this.callback = callback != null ? callback : null;
         this._delta = new Vector();
         this._acceleration = new Vector();
         this._accumulated_acceleration = new Vector();
         this.orbit = 0;
-        this.INITIAL_ORBIT_OFFSET = 12;
-        this.MINIMUM_INNER_ORBIT_OFFSET = 6;
-        this.MINIMUM_OUTER_ORBIT_OFFSET = 6;
-        this.ORBIT_CHANGE_PER_SECOND = 6;
         this.TRACKING_FACTOR = 1.0;
         Orbiter.__super__.constructor.apply(this, arguments);
         this;
@@ -847,28 +1030,13 @@
 
       Orbiter.prototype.adjustOrbitOverTime = function(p, dt) {
         if (this.orbit > this.ring.radius) {
-          if (this.orbit > (this.ring.radius + this.MINIMUM_OUTER_ORBIT_OFFSET)) {
-            return this.orbit -= dt * this.ORBIT_CHANGE_PER_SECOND;
+          if (this.orbit > (this.ring.radius + FNT.PhysicsConstants.MINIMUM_OUTER_ORBIT_OFFSET)) {
+            return this.orbit -= dt * FNT.PhysicsConstants.ORBIT_CHANGE_PER_SECOND;
           }
         } else {
-          if (this.orbit < (this.ring.radius - this.MINIMUM_INNER_ORBIT_OFFSET)) {
-            return this.orbit += dt * this.ORBIT_CHANGE_PER_SECOND;
+          if (this.orbit < (this.ring.radius - FNT.PhysicsConstants.MINIMUM_INNER_ORBIT_OFFSET)) {
+            return this.orbit += dt * FNT.PhysicsConstants.ORBIT_CHANGE_PER_SECOND;
           }
-        }
-      };
-
-      Orbiter.prototype.adjustOrbit = function(p, acceleration) {
-        var THRESHOLD, orbit_changing_force;
-        this._delta.copy(p.pos).sub(this.ring.position);
-        orbit_changing_force = this._delta.dot(acceleration) / this._delta.magSq();
-        THRESHOLD = FNT.PhysicsConstants.ORBIT_CHANGE_THRESHOLD;
-        if (((-1 * THRESHOLD) < orbit_changing_force && orbit_changing_force < THRESHOLD)) {
-          return;
-        }
-        if (this.orbit > this.ring.radius && orbit_changing_force < 0) {
-          return this.orbit = this.ring.radius - FNT.PhysicsConstants.ORBIT_OFFSET;
-        } else if (this.orbit < this.ring.radius && orbit_changing_force > 0) {
-          return this.orbit = this.ring.radius + FNT.PhysicsConstants.ORBIT_OFFSET;
         }
       };
 
@@ -895,20 +1063,24 @@
       };
 
       Orbiter.prototype.findAttachableRing = function(p) {
-        var dist, inner_perimeter, outer_perimeter, r, _i, _len, _ref;
+        var dist, inner_perimeter, outer_perimeter, r, threshold, _i, _len, _ref;
         _ref = this.levelModel.getRings();
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           r = _ref[_i];
           dist = this.distanceBetween(p, r);
           outer_perimeter = r.radius + p.radius;
           inner_perimeter = r.radius - p.radius;
-          if ((inner_perimeter < dist && dist < outer_perimeter)) {
+          threshold = FNT.PhysicsConstants.ORBIT_ATTACH_THRESHOLD;
+          if ((inner_perimeter - threshold < dist && dist < outer_perimeter + threshold)) {
             this.ring = r;
             this._accumulated_acceleration.clear();
             if (dist < this.ring.radius) {
-              this.orbit = this.ring.radius - this.INITIAL_ORBIT_OFFSET;
+              this.orbit = this.ring.radius - FNT.PhysicsConstants.INITIAL_ORBIT_OFFSET;
             } else {
-              this.orbit = this.ring.radius + this.INITIAL_ORBIT_OFFSET;
+              this.orbit = this.ring.radius + FNT.PhysicsConstants.INITIAL_ORBIT_OFFSET;
+            }
+            if (typeof this.callback === "function") {
+              this.callback(p, this.ring);
             }
             return this.ring;
           }
@@ -948,14 +1120,26 @@
         this.keyboard = new FNT.Keyboard().create(function(inAlternateState) {
           return _this.onStateChanged(inAlternateState);
         });
+        this.keyboard.addListener(FNT.Keys.ORBIT, FNT.KeyDown, function() {
+          return _this.setOrbitState(true);
+        });
+        this.keyboard.addListener(FNT.Keys.ORBIT, FNT.KeyUp, function() {
+          return _this.setOrbitState(false);
+        });
         this.setRadius(this.playerModel.radius);
         this.playerModel.addObserver(this);
         return this;
       };
 
-      PlayerParticle.prototype.onStateChanged = function(inAlternateState) {
-        this.orbiter.setActive(inAlternateState);
-        return this.levelCollision.setActive(!inAlternateState);
+      PlayerParticle.prototype.setOrbitState = function(isOrbiting) {
+        this.clearState();
+        this.orbiter.setActive(isOrbiting);
+        return this.levelCollision.setActive(!isOrbiting);
+      };
+
+      PlayerParticle.prototype.clearState = function() {
+        this.playerModel.state.set(FNT.PlayerStates.NORMAL);
+        return this.playerModel.level.resetAllRings();
       };
 
       PlayerParticle.prototype.handleEvent = function(event) {
@@ -965,10 +1149,15 @@
         }
       };
 
+      PlayerParticle.prototype.onOrbitStart = function(p, ring) {
+        p.playerModel.state.set(FNT.PlayerStates.ORBITING);
+        return ring.setOrbited(true);
+      };
+
       PlayerParticle.prototype.spawn = function() {
         this.moveTo(new Vector(this.playerModel.position.x, this.playerModel.position.y));
         this.levelCollision = new FNT.LevelCollision(this.playerModel.level, this.keyboard);
-        this.orbiter = new FNT.Orbiter(this.playerModel.level, this.keyboard);
+        this.orbiter = new FNT.Orbiter(this.playerModel.level, this.keyboard, this.onOrbitStart);
         this.behaviours.push(this.orbiter);
         this.behaviours.push(this.levelCollision);
         this.behaviours.push(this.couplePosition);
@@ -988,35 +1177,20 @@
   namespace("FNT", function(exports) {
     return exports.PhysicsController = (function() {
 
-      function PhysicsController() {
-        this;
-
-      }
+      function PhysicsController() {}
 
       PhysicsController.prototype.create = function(gameModel) {
         this.gameModel = gameModel;
         this.physics = new Physics(new Verlet());
         this.gravity = new ConstantForce(new Vector(0.0, 150.0));
         this.physics.behaviours.push(this.gravity);
+        this.initPlayerPhysics(this.gameModel.player);
         this.gameModel.addObserver(this);
         return this;
       };
 
       PhysicsController.prototype.step = function() {
         return this.physics.step();
-      };
-
-      PhysicsController.prototype.applyInput = function(inputState) {
-        return this.input.state = inputState;
-      };
-
-      PhysicsController.prototype.handleEvent = function(event) {
-        switch (event.type) {
-          case FNT.GameModelEvents.CREATE_LEVEL:
-            return this.levelModel = event.data;
-          case FNT.GameModelEvents.ADDED_PLAYER:
-            return this.initPlayerPhysics(event.data);
-        }
       };
 
       PhysicsController.prototype.initPlayerPhysics = function(playerModel) {
@@ -1027,6 +1201,48 @@
       return PhysicsController;
 
     })();
+  });
+
+  namespace("FNT", function(exports) {
+    return exports.GameFactory = (function(_super) {
+
+      __extends(GameFactory, _super);
+
+      function GameFactory() {
+        return GameFactory.__super__.constructor.apply(this, arguments);
+      }
+
+      GameFactory.build = function(director) {
+        var gameController, gameModel, gameView;
+        gameModel = this.createGameModel();
+        gameController = this.createGameController(gameModel);
+        gameView = this.createGameView(director, gameModel, gameController);
+        return gameView;
+      };
+
+      GameFactory.createGameModel = function() {
+        var gameModel, levelModel, playerModel;
+        levelModel = FNT.LevelFactory.build();
+        playerModel = FNT.PlayerFactory.build();
+        gameModel = new FNT.GameModel(levelModel, playerModel);
+        return gameModel;
+      };
+
+      GameFactory.createGameController = function(gameModel) {
+        var gameController, physics;
+        physics = new FNT.PhysicsController().create(gameModel);
+        gameController = new FNT.GameController(physics);
+        return gameController;
+      };
+
+      GameFactory.createGameView = function(director, gameModel, gameController) {
+        var gameScene;
+        return gameScene = FNT.GameSceneActorFactory.build(director, gameModel, gameController);
+      };
+
+      return GameFactory;
+
+    })(FNT.ObservableModel);
   });
 
   /*
@@ -1054,16 +1270,12 @@
     var gameScene;
     director.emptyScenes();
     director.setImagesCache(images);
-    gameScene = new FNT.GameSceneActor().create(director);
+    gameScene = FNT.GameFactory.build(director);
     return director.easeIn(0, CAAT.Scene.prototype.EASE_TRANSLATE, 1000, false, CAAT.Actor.prototype.ANCHOR_TOP, new CAAT.Interpolator().createExponentialInOutInterpolator(5, false));
   };
 
   createCanvas = function() {
-    if (window.innerWidth > window.innerHeight) {
-      return new CAAT.Director().initialize(1024, 1024).setClear(false);
-    }
-    alert("DOING SOMETHING UNEXPECTED!");
-    return new CAAT.Director().initialize(500, 750).setClear(false);
+    return new CAAT.Director().initialize(1024, 1024).setClear(false);
   };
 
   __frenetic_init = function() {

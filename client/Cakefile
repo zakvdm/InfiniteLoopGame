@@ -17,13 +17,19 @@ files = [
         'model/LevelModel'
         'model/GameModel'
         
+        # COMPONENTS:
+        'component/StateMachine'
+        
         # ACTORS (VIEWS):
         'actor/CircleActor'
         'actor/PlayerActor'
         'actor/RingActor'
-        'actor/LevelContainer'
+        'actor/LevelActorContainer'
         'actor/BackgroundContainer'
         'actor/GameSceneActor'
+        
+        # CONTROLLERS:
+        'controller/GameController'
         
         # INPUT:
         'input/Keyboard'
@@ -35,6 +41,11 @@ files = [
         'physics/behaviour/Orbiter'
         'physics/PlayerParticle'
         'physics/PhysicsController'
+        
+        # FACTORIES:
+        'factory/GameFactory'
+        
+        # MAIN:
         'main'
 ]
 

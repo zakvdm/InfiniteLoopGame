@@ -44,8 +44,8 @@ __end_loading = (director, images) ->
   director.emptyScenes()
   director.setImagesCache(images)
 
-  gameScene = new FNT.GameSceneActor().create(director)
-         
+  gameScene = FNT.GameFactory.build(director)
+
   # LOAD THE FIRST SCENE: 
   director.easeIn(
     0,
@@ -57,10 +57,7 @@ __end_loading = (director, images) ->
   )
 
 createCanvas = ->
-  return new CAAT.Director().initialize(1024,1024).setClear( false ) if window.innerWidth > window.innerHeight 
-  
-  alert("DOING SOMETHING UNEXPECTED!");
-  return new CAAT.Director().initialize(500,750).setClear(false);
+  return new CAAT.Director().initialize(1024,1024).setClear( false )
 
 __frenetic_init = ->
   # uncomment to avoid decimal point coordinates.

@@ -5,35 +5,39 @@
 ###
 
 namespace "FNT", (exports) ->
+  class exports.GameSceneActorFactory
+    @build: (director, gameModel, gameController) ->
+      gameActor = new FNT.GameSceneActor().create(director, gameModel, gameController)
+      
+      return gameActor
+
   class exports.GameSceneActor
-    constructor: ->
+    constructor: () ->
       @
-  
+
     ###
      # Creates the main game Scene.
      # @param director a CAAT.Director instance.
+     # @param gameModel The FNT.GameModel instance that this Actor will represent.
     ### 
-    create: (@director) -> 
-      @gameModel = new FNT.GameModel().addObserver this # Create a GameModel and register to observe changes to it
-  
+    create: (@director, @gameModel, @gameController) -> 
       # Create a scene, and start the game when the scene finishes initializing
       @directorScene = director.createScene()
       @directorScene.activated = =>
         @gameModel.startGame(FNT.GameModes.quest)
       @directorScene.onRenderStart = (deltaTime) =>
-        @gameModel.step()
+        @gameController.step()
   
       # CREATE THE BACKGROUND (We want to add this first because it should be at the back):
       @backgroundContainer = new FNT.BackgroundContainer().create(@directorScene, director.width, director.height)
-  
-      # This will create all of the entities contained in the GameModel
-      # (so the Scene should already be created so there's something to attach the entities to...)
-      this.gameModel.create()
-  
+
+      @createLevel(@gameModel.level)
+      @createPlayer(@gameModel.player)
+
       @
   
     createLevel : (levelModel) ->
-      @levelContainer = new FNT.LevelContainer().
+      @levelActorContainer = new FNT.LevelActorContainer().
                             create(@directorScene, levelModel).
                             setSize(@director.width, @director.height).
                             setLocation(0, 0)
@@ -41,13 +45,4 @@ namespace "FNT", (exports) ->
     createPlayer : (player) ->
       @playerActor = new FNT.PlayerActor().
                            create(@directorScene, player)
-  
-    handleEvent : (event) ->
-      switch event.type
-        when FNT.GameModelEvents.ADDED_PLAYER
-          @createPlayer event.data
-        when FNT.GameModelEvents.CREATE_LEVEL
-          @createLevel event.data
-        else
-          console.log "UNKNOWN EVENT TYPE! #{event.type}"
-           
+

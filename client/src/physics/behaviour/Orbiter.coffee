@@ -4,7 +4,7 @@ namespace "FNT", (exports) ->
 
   class exports.Orbiter extends Behaviour
 
-    constructor: (@levelModel, @keyboard, @physics, @useMass = yes, @callback = null) ->
+    constructor: (@levelModel, @keyboard, @callback = null) ->
 
         # Delta between particle positions.
         @_delta = new Vector()
@@ -12,10 +12,6 @@ namespace "FNT", (exports) ->
         @_accumulated_acceleration = new Vector()
         
         @orbit = 0
-        @INITIAL_ORBIT_OFFSET = 12
-        @MINIMUM_INNER_ORBIT_OFFSET = 6
-        @MINIMUM_OUTER_ORBIT_OFFSET = 6 # This value is higher so that there's less "jump" when you let go from the outside (which makes it easier to go from one outer orbit to the next)
-        @ORBIT_CHANGE_PER_SECOND = 6
         
         @TRACKING_FACTOR = 1.0 # This is basically the same as Spring 'stiffness'
 
@@ -43,35 +39,20 @@ namespace "FNT", (exports) ->
         
       @_accumulated_acceleration.add(@_acceleration)
       
-      #@adjustOrbit(p, @_accumulated_acceleration)
       @adjustOrbitOverTime(p, dt)
       
       p.acc.add(@_acceleration)
     
     adjustOrbitOverTime: (p, dt) ->
       if @orbit > @ring.radius # Orbiting on the outside
-        @orbit -= (dt * @ORBIT_CHANGE_PER_SECOND) if @orbit > (@ring.radius + @MINIMUM_OUTER_ORBIT_OFFSET)
+        @orbit -= (dt * FNT.PhysicsConstants.ORBIT_CHANGE_PER_SECOND) if @orbit > (@ring.radius + FNT.PhysicsConstants.MINIMUM_OUTER_ORBIT_OFFSET)
       else # Orbiting on the inside
-        @orbit += (dt * @ORBIT_CHANGE_PER_SECOND) if @orbit < (@ring.radius - @MINIMUM_INNER_ORBIT_OFFSET)
+        @orbit += (dt * FNT.PhysicsConstants.ORBIT_CHANGE_PER_SECOND) if @orbit < (@ring.radius - FNT.PhysicsConstants.MINIMUM_INNER_ORBIT_OFFSET)
       
      
-    adjustOrbit: (p, acceleration) ->
-      # Lets work out the component of acceleration that is perpendicular to the orbit (this is what determines if we shift orbits or not)
-      # @_delta is a vector from the ring centre to p
-      @_delta.copy(p.pos).sub(@ring.position)
-      orbit_changing_force = @_delta.dot(acceleration) / @_delta.magSq() # Positive here means change towards the outer orbit (ie. along @_delta)
-      
-      THRESHOLD = FNT.PhysicsConstants.ORBIT_CHANGE_THRESHOLD
-      if (-1 * THRESHOLD) < orbit_changing_force < THRESHOLD then return
-      
-      if @orbit > @ring.radius and orbit_changing_force < 0 # We are orbiting outside and moving inside
-        @orbit = @ring.radius - FNT.PhysicsConstants.ORBIT_OFFSET
-      else if @orbit < @ring.radius and orbit_changing_force > 0 # We are orbiting inside and moving outside
-        @orbit = @ring.radius + FNT.PhysicsConstants.ORBIT_OFFSET
-        
-    
     applyTracking: (p) ->
-      dist = @distanceBetween(p, @ring) + 0.000001 # After this call, @_delta holds a vector from the center of the ring to p
+      # This uses a spring-like approach
+      dist = @distanceBetween(p, @ring) + 0.000001 # After this call, @_delta holds a vector from the centre of the ring to p
       
       force = ((@orbit - dist) * @TRACKING_FACTOR)
       p.pos.add(@_delta.norm().scale(force))
@@ -81,7 +62,7 @@ namespace "FNT", (exports) ->
       
       @ring ?= @findAttachableRing(p)
       
-      if not @ring? then return
+      if not @ring? then return # We're not Orbiting anything yet
        
       @applyTracking(p) # We do this first so we can re-use the calculated value of @_delta when we apply user input
       @applyUserInput(p, dt)
@@ -94,23 +75,26 @@ namespace "FNT", (exports) ->
         outer_perimeter = r.radius + p.radius
         inner_perimeter = r.radius - p.radius
         
-        if inner_perimeter < dist < outer_perimeter
+        threshold = FNT.PhysicsConstants.ORBIT_ATTACH_THRESHOLD
+        
+        if inner_perimeter - threshold < dist < outer_perimeter + threshold
           # Overlaps!
           @ring = r
           @_accumulated_acceleration.clear()
           if dist < @ring.radius # We're inside the ring
-            #@orbit = @ring.radius - FNT.PhysicsConstants.ORBIT_OFFSET
-            @orbit = @ring.radius - @INITIAL_ORBIT_OFFSET
+            @orbit = @ring.radius - FNT.PhysicsConstants.INITIAL_ORBIT_OFFSET
           else
-            #@orbit = @ring.radius + FNT.PhysicsConstants.ORBIT_OFFSET
-            @orbit = @ring.radius + @INITIAL_ORBIT_OFFSET
+            @orbit = @ring.radius + FNT.PhysicsConstants.INITIAL_ORBIT_OFFSET
+          
+          # Fire callback if defined.
+          @callback?(p, @ring)
+          
           return @ring
         
       null
      
     distanceBetween: (a, b) ->
        @_delta.copy(a.pos).sub(b.position) # delta points from ring.position to p.pos
-        
        return @_delta.mag()
         
        

@@ -3,7 +3,6 @@ namespace "FNT", (exports) ->
 
   class exports.PhysicsController
     constructor: ->
-      @
     
     create: (@gameModel) ->
       @physics = new Physics(new Verlet())
@@ -13,25 +12,15 @@ namespace "FNT", (exports) ->
       # Add gravity
       @gravity = new ConstantForce(new Vector 0.0, 150.0)
       @physics.behaviours.push @gravity
-      
 
-      @gameModel.addObserver(this)
+      @initPlayerPhysics(@gameModel.player)
+
+      @gameModel.addObserver(@)
       @
 
     step: ->
       @physics.step()
       
-    applyInput: (inputState) ->
-      @input.state = inputState
-
-    handleEvent: (event) ->
-      switch event.type
-        when FNT.GameModelEvents.CREATE_LEVEL
-          @levelModel = event.data
-        when FNT.GameModelEvents.ADDED_PLAYER
-          @initPlayerPhysics(event.data)
-          
-          
     initPlayerPhysics: (playerModel) ->
       @player = new FNT.PlayerParticle().create(playerModel)
       

@@ -2,6 +2,12 @@
 
 namespace "FNT", (exports) ->
 
+  exports.KeyUp = "FNT_KEY_UP_EVENT"
+  exports.KeyDown = "FNT_KEY_DOWN_EVENT"
+  
+  exports.Keys =
+    ORBIT:   "FNT_KEYS_ORBIT"
+  
   class exports.Keyboard
     constructor: () ->
       @
@@ -11,9 +17,15 @@ namespace "FNT", (exports) ->
     LEFT:         false
     RIGHT:        false
     
-    currentState: false
+    listeners:   {}
+    
+    currentState:
+      ORBIT:
+        false
+      RESET:
+        false
       
-    create: (@modeChangedCallback) ->
+    create: () ->
       ###
        # Register a CAAT key listener function
       ###
@@ -21,17 +33,32 @@ namespace "FNT", (exports) ->
       
       @
       
+    addListener: (key, keyEvent, callback) ->
+      if not @listeners[key]?
+        @listeners[key] = {}
+        @listeners[key][FNT.KeyUp] = []
+        @listeners[key][FNT.KeyDown] = []
+          
+      @listeners[key][keyEvent].push(callback)
+     
+    notifyListeners: (key, keyEvent) ->
+      for callback in @listeners[key][keyEvent]
+        callback()
+      
     getKeyState: (keyEvent) ->
       keyEvent.preventDefault()
       if keyEvent.getAction() is 'down' then true else false
+      
+    toKeyEvent: (keyDownAction) ->
+      if keyDownAction then FNT.KeyDown else FNT.KeyUp
           
     checkInput: (keyEvent) ->
       switch keyEvent.getKeyCode()
         when CAAT.Keys.j
           state = @getKeyState(keyEvent) # We are in the alternate state as long as the key is pressed
-          if state != @currentState
-            @currentState = state
-            @modeChangedCallback(state)
+          if state != @currentState.ORBIT
+            @currentState.ORBIT = state
+            @notifyListeners(FNT.Keys.ORBIT, @toKeyEvent(state))
           
         when CAAT.Keys.UP, CAAT.Keys.w
           @UP = @getKeyState(keyEvent)

@@ -7,21 +7,20 @@ namespace "FNT", (exports) ->
       super()
       @ # return this
       
-    create: (scene, playerModel) ->
+    create: (scene, @playerModel) ->
       @setVisible(false)
       
-      @setDiameter(playerModel.diameter)
-      @setPosition(playerModel.position)
+      @setDiameter(@playerModel.diameter)
+      @setPosition(@playerModel.position)
       
+      @setLineWidth(2)
       @setStrokeStyle('#0')
-      @setFillStyle(playerModel.color)
-      
-      @playerModel = playerModel
+      @setFillStyle(@playerModel.COLOR)
       
       @prepareSpawnBehavior()
       
-      playerModel.addObserver this
-      scene.addChild this
+      @playerModel.addObserver(this)
+      scene.addChild(this)
       
       @
     
@@ -42,7 +41,17 @@ namespace "FNT", (exports) ->
           @spawn()
         when FNT.PlayerEvents.NEW_POSITION
           @setPosition(@playerModel.position)
-      
+        when FNT.STATE_CHANGE_EVENT, event.source is @playerModel
+          @handleStateChange(event.data)
+   
+    handleStateChange: (newState) ->
+      switch newState
+        when FNT.PlayerStates.NORMAL
+          @setFillStyle(@playerModel.COLOR)
+        when FNT.PlayerStates.ORBITING
+          @setFillStyle(@playerModel.ORBITING_COLOR)
+        
+     
     spawn: ->
       @setPosition(@playerModel.position)
       

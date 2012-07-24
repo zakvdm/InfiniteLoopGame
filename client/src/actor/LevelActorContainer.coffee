@@ -1,7 +1,7 @@
 
 namespace "FNT", (exports) ->
   
-  class exports.LevelContainer extends CAAT.ActorContainer
+  class exports.LevelActorContainer extends CAAT.ActorContainer
     constructor: ->
       super()
       @ringActors = []
@@ -12,21 +12,24 @@ namespace "FNT", (exports) ->
       @levelModel = levelModel
   
       # Register for Level Events
-      @levelModel.addObserver this
-      @scene.addChild this
+      @levelModel.addObserver(this)
+      @scene.addChild(this)
   
       @
      
     handleEvent: (event) ->
-      @loadLevel() if event.type == FNT.LevelEvents.LOAD
+      switch event.type
+        when FNT.LevelEvents.LOAD
+          @loadLevel()
       
     loadLevel: ->
+      @completedRingActors = 0
       @_create ringModel for ringModel in @levelModel.getRings() # Create all the RingActors
       @_animate ringActor for ringActor in @ringActors # Animate them all into place
       
       
     _create: (ringModel) ->
-      ringActor = new FNT.RingActor().create ringModel
+      ringActor = new FNT.RingActor().create(ringModel)
       ringActor.setVisible false
   
       # ADD TO THE SCENE
@@ -34,7 +37,7 @@ namespace "FNT", (exports) ->
       @addChild ringActor # Add it to the scene graph
       
     _animate: (ringActor) ->
-      @_animateInUsingScale(ringActor, @scene.time + Math.random() * 500, 1500, 0.1, 1)
+      @_animateInUsingScale(ringActor, @scene.time, 1000, 0.1, 1)
       ringActor.setVisible true
       
     ###
@@ -50,5 +53,13 @@ namespace "FNT", (exports) ->
       scaleBehavior.setCycle(false);
       scaleBehavior.setInterpolator(new CAAT.Interpolator().createBounceOutInterpolator(false));
       actor.addBehavior(scaleBehavior);
+      
+      scaleBehavior.addListener({ behaviorExpired : (behavior, time, ringActor) => @_doneAnimating(actor)})
+      
+    _doneAnimating: (ringActor) ->
+      @completedRingActors += 1
+      if @completedRingActors >= @ringActors.length
+        @levelModel.state.set(FNT.LevelStates.LOADED)
+      
       
        
