@@ -587,7 +587,6 @@
       LevelActorContainer.prototype.loadLevel = function() {
         var ringActor, ringModel, _i, _j, _len, _len1, _ref, _ref1, _results;
         this._clearCurrentLevel();
-        this.completedRingActors = 0;
         _ref = this.levelModel.getRings();
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           ringModel = _ref[_i];
@@ -621,7 +620,7 @@
       };
 
       LevelActorContainer.prototype._animate = function(ringActor) {
-        this._animateInUsingScale(ringActor, this.scene.time, 1000, 0.1, 1);
+        this._animateInUsingScale(ringActor, this.scene.time, 1000);
         return ringActor.setVisible(true);
       };
 
@@ -630,29 +629,34 @@
       */
 
 
-      LevelActorContainer.prototype._animateInUsingScale = function(actor, startTime, duration, startScale, endScale) {
-        var scaleBehavior,
-          _this = this;
-        scaleBehavior = new CAAT.ScaleBehavior();
-        scaleBehavior.anchor = CAAT.Actor.prototype.ANCHOR_CENTER;
-        actor.scaleX = actor.scaleY = scaleBehavior.startScaleX = scaleBehavior.startScaleY = startScale;
-        scaleBehavior.endScaleX = scaleBehavior.endScaleY = endScale;
-        scaleBehavior.setFrameTime(startTime, duration);
-        scaleBehavior.setCycle(false);
-        scaleBehavior.setInterpolator(new CAAT.Interpolator().createBounceOutInterpolator(false));
-        actor.addBehavior(scaleBehavior);
-        return scaleBehavior.addListener({
-          behaviorExpired: function(behavior, time, ringActor) {
-            return _this._doneAnimating(actor);
-          }
-        });
+      LevelActorContainer.prototype._animateInUsingScale = function(actor, startTime, duration) {
+        var _ref;
+        if ((_ref = this.scaleBehavior) == null) {
+          this.scaleBehavior = this._createScaleBehavior();
+        }
+        actor.scaleX = actor.scaleY = this.scaleBehavior.startScaleX;
+        this.scaleBehavior.setFrameTime(startTime, duration);
+        return actor.addBehavior(this.scaleBehavior);
       };
 
-      LevelActorContainer.prototype._doneAnimating = function(ringActor) {
-        this.completedRingActors += 1;
-        if (this.completedRingActors >= this.ringActors.length) {
-          return this.levelModel.state.set(FNT.LevelStates.LOADED);
-        }
+      LevelActorContainer.prototype._createScaleBehavior = function(startScale, endScale) {
+        var _this = this;
+        this.scaleBehavior = new CAAT.ScaleBehavior();
+        this.scaleBehavior.anchor = CAAT.Actor.prototype.ANCHOR_CENTER;
+        this.scaleBehavior.startScaleX = this.scaleBehavior.startScaleY = 0.1;
+        this.scaleBehavior.endScaleX = this.scaleBehavior.endScaleY = 1;
+        this.scaleBehavior.setCycle(false);
+        this.scaleBehavior.setInterpolator(new CAAT.Interpolator().createBounceOutInterpolator(false));
+        this.scaleBehavior.addListener({
+          behaviorExpired: function(behavior, time, actor) {
+            return _this._doneAnimating();
+          }
+        });
+        return this.scaleBehavior;
+      };
+
+      LevelActorContainer.prototype._doneAnimating = function() {
+        return this.levelModel.state.set(FNT.LevelStates.LOADED);
       };
 
       return LevelActorContainer;

@@ -25,7 +25,6 @@ namespace "FNT", (exports) ->
     loadLevel: ->
       @_clearCurrentLevel()
       
-      @completedRingActors = 0
       @_create ringModel for ringModel in @levelModel.getRings() # Create all the RingActors
       @_animate ringActor for ringActor in @ringActors # Animate them all into place
      
@@ -45,29 +44,34 @@ namespace "FNT", (exports) ->
       @addChild ringActor # Add it to the scene graph
       
     _animate: (ringActor) ->
-      @_animateInUsingScale(ringActor, @scene.time, 1000, 0.1, 1)
+      @_animateInUsingScale(ringActor, @scene.time, 1000)
       ringActor.setVisible true
       
     ###
      # Adds a CAAT.ScaleBehavior to the entity, used on animate in
     ###
-    _animateInUsingScale : (actor, startTime, duration, startScale, endScale) ->
-      scaleBehavior = new CAAT.ScaleBehavior();
-      scaleBehavior.anchor = CAAT.Actor.prototype.ANCHOR_CENTER;
+    _animateInUsingScale : (actor, startTime, duration) ->
+      @scaleBehavior ?= @_createScaleBehavior()
       
-      actor.scaleX = actor.scaleY = scaleBehavior.startScaleX = scaleBehavior.startScaleY = startScale;
-      scaleBehavior.endScaleX = scaleBehavior.endScaleY = endScale;
-      scaleBehavior.setFrameTime(startTime, duration);
-      scaleBehavior.setCycle(false);
-      scaleBehavior.setInterpolator(new CAAT.Interpolator().createBounceOutInterpolator(false));
-      actor.addBehavior(scaleBehavior);
+      actor.scaleX = actor.scaleY = @scaleBehavior.startScaleX
+      @scaleBehavior.setFrameTime(startTime, duration)
+      actor.addBehavior(@scaleBehavior)
+    
+    _createScaleBehavior: (startScale, endScale) ->
+      @scaleBehavior = new CAAT.ScaleBehavior()
+      @scaleBehavior.anchor = CAAT.Actor.prototype.ANCHOR_CENTER
       
-      scaleBehavior.addListener({ behaviorExpired : (behavior, time, ringActor) => @_doneAnimating(actor)})
+      @scaleBehavior.startScaleX = @scaleBehavior.startScaleY = 0.1
+      @scaleBehavior.endScaleX = @scaleBehavior.endScaleY = 1
+      @scaleBehavior.setCycle(false)
+      @scaleBehavior.setInterpolator(new CAAT.Interpolator().createBounceOutInterpolator(false))
       
-    _doneAnimating: (ringActor) ->
-      @completedRingActors += 1
-      if @completedRingActors >= @ringActors.length
-        @levelModel.state.set(FNT.LevelStates.LOADED)
+      @scaleBehavior.addListener({ behaviorExpired : (behavior, time, actor) => @_doneAnimating()})
+      
+      return @scaleBehavior
+      
+    _doneAnimating: ->
+      @levelModel.state.set(FNT.LevelStates.LOADED)
       
       
        
