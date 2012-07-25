@@ -1,22 +1,11 @@
 
 namespace "FNT", (exports) ->
 
-  # LEVEL EVENTS
-  exports.LevelEvents =
-      LOAD:    "level_event_load"
-      
-  # LEVEL STATES
-  exports.LevelStates =
-    LOADED:           "level_state_loaded"
-    PLAYING:          "level_state_playing"
-
   class exports.LevelFactory
-    @build: ->
-      level = new FNT.LevelModel().create()
+    @build: (levelData) ->
+      level = new FNT.LevelModel()
       
-      # COMPONENTS:
-      stateMachine = new FNT.StateMachine(level)
-      level.state = stateMachine
+      level.load(levelData)
       
       return level
       
@@ -26,17 +15,13 @@ namespace "FNT", (exports) ->
       super()
       @
       
-    create: ->
-      @
-     
-    load : (ringData) ->
+    load: (levelData) ->
+      @spawnLocation = levelData.spawnLocation
       @rings = []
       
-      for ring in ringData
+      for ring in levelData.ringData
         @rings.push new FNT.RingModel().create(ring)
       
-      @notifyObservers(FNT.LevelEvents.LOAD, @)
-    
     getRings: -> @rings
     
     resetAllRings: ->

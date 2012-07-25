@@ -7,7 +7,7 @@ namespace "FNT", (exports) ->
       super()
       @
     
-    create: (@playerModel, @levelModel, @keyboard) ->
+    create: (@playerModel, @levelSequence, @keyboard) ->
       @couplePosition = new FNT.CouplePosition(@playerModel)
         
       #@keyboard.addListener(FNT.Keys.ORBIT, FNT.KeyDown, => @setOrbitState(true))
@@ -18,8 +18,8 @@ namespace "FNT", (exports) ->
 
       @setRadius(@playerModel.radius)
 
-      @levelCollision = new FNT.LevelCollision(@levelModel, @keyboard)
-      @orbiter = new FNT.Orbiter(@levelModel, @keyboard, @onOrbitStart)
+      @levelCollision = new FNT.LevelCollision(@levelSequence, @keyboard)
+      @orbiter = new FNT.Orbiter(@levelSequence, @keyboard, @onOrbitStart)
       
       @levelCollision.setActive(false)
       @orbiter.setActive(false)
@@ -39,7 +39,7 @@ namespace "FNT", (exports) ->
 
     clearState: ->
       @playerModel.state.set(FNT.PlayerStates.NORMAL)
-      @levelModel.resetAllRings()
+      @levelSequence.getCurrentLevel().resetAllRings()
 
     handleEvent: (event) ->
       switch event.type

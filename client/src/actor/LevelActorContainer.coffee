@@ -7,25 +7,23 @@ namespace "FNT", (exports) ->
       @ringActors = []
       @
       
-    create: (scene, levelModel) ->
-      @scene = scene
-      @levelModel = levelModel
-  
+    create: (@scene, @levelSequence) ->
       # Register for Level Events
-      @levelModel.addObserver(this)
+      @levelSequence.addObserver(this)
+      
       @scene.addChild(this)
   
       @
      
     handleEvent: (event) ->
-      switch event.type
-        when FNT.LevelEvents.LOAD
-          @loadLevel()
+      switch event.data
+        when FNT.LevelSequenceStates.PREPARING
+          @drawLevel()
       
-    loadLevel: ->
+    drawLevel: ->
       @_clearCurrentLevel()
       
-      @_create ringModel for ringModel in @levelModel.getRings() # Create all the RingActors
+      @_create ringModel for ringModel in @levelSequence.getCurrentLevel().getRings() # Create all the RingActors
       @_animate ringActor for ringActor in @ringActors # Animate them all into place
      
     _clearCurrentLevel: ->
@@ -71,7 +69,7 @@ namespace "FNT", (exports) ->
       return @scaleBehavior
       
     _doneAnimating: ->
-      @levelModel.state.set(FNT.LevelStates.LOADED)
+      @levelSequence.state.set(FNT.LevelSequenceStates.READY)
       
       
        

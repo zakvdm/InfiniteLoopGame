@@ -15,6 +15,7 @@ files = [
         'model/PlayerModel'
         'model/RingModel'
         'model/LevelModel'
+        'model/LevelSequence'
         'model/GameModel'
         
         # COMPONENTS:

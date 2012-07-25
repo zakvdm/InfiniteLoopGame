@@ -7,7 +7,8 @@ namespace "FNT", (exports) ->
         name:   "quest"
         levelData: [
            {  # LEVEL 0
-               spawnLocation : {x: 312, y: 200},
+               spawnLocation :    {x: 312, y: 200},
+               nextLevelLocation: {x: 400, y: 100},
                ringData : [  
                             {x: 500, y: 500, diameter: 900},
                             {x: 100, y: 300, diameter: 190},

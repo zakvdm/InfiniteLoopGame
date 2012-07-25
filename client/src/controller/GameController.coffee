@@ -15,6 +15,5 @@ namespace "FNT", (exports) ->
     
     registerKeyListeners: ->      
       @keyboard.RESET.addListener(FNT.KeyDown, => @reset())
-      @keyboard.NEXT_LEVEL.addListener(FNT.KeyDown, => @gameModel.loadLevel(@gameModel.currentLevelIndex + 1))
-      @keyboard.PREVIOUS_LEVEL.addListener(FNT.KeyDown, => @gameModel.loadLevel(@gameModel.currentLevelIndex - 1))
+      @keyboard.NEXT_LEVEL.addListener(FNT.KeyDown, => @gameModel.nextLevel())
       

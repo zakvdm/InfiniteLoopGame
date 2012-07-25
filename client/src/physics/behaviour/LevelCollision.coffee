@@ -4,7 +4,7 @@ namespace "FNT", (exports) ->
 
   class exports.LevelCollision extends Behaviour
 
-    constructor: (@levelModel, @keyboard, @useMass = yes, @callback = null) ->
+    constructor: (@levelSequence, @keyboard, @useMass = yes, @callback = null) ->
 
         # Delta between particle positions.
         @_delta = new Vector()
@@ -22,7 +22,7 @@ namespace "FNT", (exports) ->
     handleCollisions: (p) ->  
       @onRing = false
       
-      for ring in @levelModel.getRings() # ring is FNT.RingModel
+      for ring in @levelSequence.getCurrentLevel().getRings() # ring is FNT.RingModel
         @_delta.copy(p.pos).sub(ring.position) # delta points from ring.position to p.pos
         
         # Distance from the particle centre to the Ring centre

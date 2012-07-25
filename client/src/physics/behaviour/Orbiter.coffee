@@ -4,7 +4,7 @@ namespace "FNT", (exports) ->
 
   class exports.Orbiter extends Behaviour
 
-    constructor: (@levelModel, @keyboard, @callback = null) ->
+    constructor: (@levelSequence, @keyboard, @callback = null) ->
 
         # Delta between particle positions.
         @_delta = new Vector()
@@ -69,7 +69,7 @@ namespace "FNT", (exports) ->
       
 
     findAttachableRing: (p) ->
-      for r in @levelModel.getRings() # ring is FNT.RingModel
+      for r in @levelSequence.getCurrentLevel().getRings() # ring is FNT.RingModel
         dist = @distanceBetween(p, r)
   
         outer_perimeter = r.radius + p.radius

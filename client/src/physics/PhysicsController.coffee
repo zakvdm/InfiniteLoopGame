@@ -13,7 +13,7 @@ namespace "FNT", (exports) ->
       @gravity = new ConstantForce(new Vector 0.0, 150.0)
       @physics.behaviours.push @gravity
 
-      @initPlayerPhysics(@gameModel.player, @gameModel.level)
+      @initPlayerPhysics(@gameModel.player, @gameModel.levelSequence)
 
       @gameModel.addObserver(@)
       @
@@ -21,7 +21,7 @@ namespace "FNT", (exports) ->
     step: ->
       @physics.step()
       
-    initPlayerPhysics: (playerModel, levelModel) ->
-      @player = new FNT.PlayerParticle().create(playerModel, levelModel, @keyboard)
+    initPlayerPhysics: (playerModel, levelSequence) ->
+      @player = new FNT.PlayerParticle().create(playerModel, levelSequence, @keyboard)
       
       @physics.particles.push(@player)

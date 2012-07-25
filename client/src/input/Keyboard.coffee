@@ -5,12 +5,6 @@ namespace "FNT", (exports) ->
   exports.KeyUp = "FNT_KEY_UP_EVENT"
   exports.KeyDown = "FNT_KEY_DOWN_EVENT"
   
-  exports.Keys =
-    ORBIT:           "FNT_KEYS_ORBIT"
-    RESET:           "FNT_KEYS_RESET"
-    NEXT_LEVEL:      "FNT_KEYS_NEXT_LEVEL"
-    PREVIOUS_LEVEL:  "FNT_KEYS_PREVIOUS_LEVEL"
-    
   class exports.Key
     constructor: ->
       @state = FNT.KeyUp
@@ -35,36 +29,22 @@ namespace "FNT", (exports) ->
   
   class exports.Keyboard
     constructor: ->
-      @currentState = {}
-      for key in FNT.Keys
-        @currentState[key] = FNT.KeyUp
-        
       @_keyMap = {}
       @_keyMap[CAAT.Keys.j]          = @ORBIT
       @_keyMap[CAAT.Keys.r]          = @RESET
       @_keyMap[CAAT.Keys.n]          = @NEXT_LEVEL
-      @_keyMap[CAAT.Keys.p]          = @PREVIOUS_LEVEL
       
       @
       
     ORBIT:                 new FNT.Key()
     RESET:                 new FNT.Key()
     NEXT_LEVEL:            new FNT.Key()
-    PREVIOUS_LEVEL:        new FNT.Key()
       
     UP:           false
     DOWN:         false
     LEFT:         false
     RIGHT:        false
     
-    listeners:   {}
-    
-    currentState:
-      ORBIT:             false
-      RESET:             false
-      NEXT_LEVEL:        false
-      PREVIOUS_LEVEL:    false
-      
     create: ->
       ###
        # Register a CAAT key listener function
@@ -89,13 +69,6 @@ namespace "FNT", (exports) ->
       keyEvent.preventDefault()
       if keyEvent.getAction() is 'down' then FNT.KeyDown else FNT.KeyUp
     
-    handleKeyEvent: (keyEvent) ->
-      key = @keyMap[keyEvent.getKeyCode()]
-      state = @getKeyState(keyEvent)
-      if state != @currentState[key]
-        @currentState[key] = state
-        @notifyListeners(key, state)
-      
     _handleKeyEvent: (keyEvent) ->
       key = @_keyMap[keyEvent.getKeyCode()]
       newState = @getKeyState(keyEvent)

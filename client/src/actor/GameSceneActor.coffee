@@ -24,21 +24,21 @@ namespace "FNT", (exports) ->
       # Create a scene, and start the game when the scene finishes initializing
       @directorScene = director.createScene()
       @directorScene.activated = =>
-        @gameModel.startGame(FNT.GameModes.quest)
+        @gameModel.startGame()
       @directorScene.onRenderStart = (deltaTime) =>
         @gameController.step()
   
       # CREATE THE BACKGROUND (We want to add this first because it should be at the back):
       @backgroundContainer = new FNT.BackgroundContainer().create(@directorScene, director.width, director.height)
 
-      @createLevel(@gameModel.level)
+      @createLevelContainer(@gameModel.levelSequence)
       @createPlayer(@gameModel.player)
 
       @
   
-    createLevel : (levelModel) ->
+    createLevelContainer : (levelSequence) ->
       @levelActorContainer = new FNT.LevelActorContainer().
-                            create(@directorScene, levelModel).
+                            create(@directorScene, levelSequence).
                             setSize(@director.width, @director.height).
                             setLocation(0, 0)
   

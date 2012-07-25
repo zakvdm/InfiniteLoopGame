@@ -76,6 +76,10 @@
               x: 312,
               y: 200
             },
+            nextLevelLocation: {
+              x: 400,
+              y: 100
+            },
             ringData: [
               {
                 x: 500,
@@ -269,22 +273,14 @@
   });
 
   namespace("FNT", function(exports) {
-    exports.LevelEvents = {
-      LOAD: "level_event_load"
-    };
-    exports.LevelStates = {
-      LOADED: "level_state_loaded",
-      PLAYING: "level_state_playing"
-    };
     exports.LevelFactory = (function() {
 
       function LevelFactory() {}
 
-      LevelFactory.build = function() {
-        var level, stateMachine;
-        level = new FNT.LevelModel().create();
-        stateMachine = new FNT.StateMachine(level);
-        level.state = stateMachine;
+      LevelFactory.build = function(levelData) {
+        var level;
+        level = new FNT.LevelModel();
+        level.load(levelData);
         return level;
       };
 
@@ -301,18 +297,17 @@
 
       }
 
-      LevelModel.prototype.create = function() {
-        return this;
-      };
-
-      LevelModel.prototype.load = function(ringData) {
-        var ring, _i, _len;
+      LevelModel.prototype.load = function(levelData) {
+        var ring, _i, _len, _ref, _results;
+        this.spawnLocation = levelData.spawnLocation;
         this.rings = [];
-        for (_i = 0, _len = ringData.length; _i < _len; _i++) {
-          ring = ringData[_i];
-          this.rings.push(new FNT.RingModel().create(ring));
+        _ref = levelData.ringData;
+        _results = [];
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          ring = _ref[_i];
+          _results.push(this.rings.push(new FNT.RingModel().create(ring)));
         }
-        return this.notifyObservers(FNT.LevelEvents.LOAD, this);
+        return _results;
       };
 
       LevelModel.prototype.getRings = function() {
@@ -336,14 +331,78 @@
   });
 
   namespace("FNT", function(exports) {
+    exports.LevelSequenceEvents = {
+      NEXT_LEVEL: "level_sequence_event_next_level"
+    };
+    exports.LevelSequenceStates = {
+      PREPARING: "level_state_preparing",
+      READY: "level_state_ready",
+      PLAYING: "level_state_playing"
+    };
+    exports.LevelSequenceFactory = (function() {
+
+      function LevelSequenceFactory() {}
+
+      LevelSequenceFactory.build = function(allLevels) {
+        var levelData, levelSequence, stateMachine, _i, _len;
+        levelSequence = new FNT.LevelSequence();
+        stateMachine = new FNT.StateMachine(levelSequence);
+        levelSequence.state = stateMachine;
+        for (_i = 0, _len = allLevels.length; _i < _len; _i++) {
+          levelData = allLevels[_i];
+          levelSequence.addLevel(FNT.LevelFactory.build(levelData));
+        }
+        return levelSequence;
+      };
+
+      return LevelSequenceFactory;
+
+    })();
+    return exports.LevelSequence = (function(_super) {
+
+      __extends(LevelSequence, _super);
+
+      function LevelSequence(levels) {
+        this.levels = levels != null ? levels : [];
+        LevelSequence.__super__.constructor.call(this);
+        this;
+
+      }
+
+      LevelSequence.prototype.addLevel = function(levelModel) {
+        return this.levels.push(levelModel);
+      };
+
+      LevelSequence.prototype.start = function() {
+        this.currentLevel = 0;
+        return this.state.set(FNT.LevelSequenceStates.PREPARING);
+      };
+
+      LevelSequence.prototype.getCurrentLevel = function() {
+        return this.levels[this.currentLevel];
+      };
+
+      LevelSequence.prototype.advance = function() {
+        if (this.currentLevel < (this.levels.length - 2)) {
+          this.currentLevel += 1;
+        }
+        return this.state.set(FNT.LevelSequenceStates.PREPARING);
+      };
+
+      return LevelSequence;
+
+    })(FNT.ObservableModel);
+  });
+
+  namespace("FNT", function(exports) {
     return exports.GameModel = (function(_super) {
 
       __extends(GameModel, _super);
 
-      function GameModel(level, player) {
-        this.level = level;
+      function GameModel(levelSequence, player) {
+        this.levelSequence = levelSequence;
         this.player = player;
-        this.level.addObserver(this);
+        this.levelSequence.addObserver(this);
         GameModel.__super__.constructor.call(this);
         this;
 
@@ -356,32 +415,23 @@
       };
 
       GameModel.prototype.handleEvent = function(event) {
-        switch (event.type) {
-          case FNT.STATE_CHANGE_EVENT:
-          case event.data === FNT.LevelStates.LOADED:
-          case event.source === this.level:
+        switch (event.data) {
+          case FNT.LevelSequenceStates.READY:
             return this.startLevel();
         }
       };
 
-      GameModel.prototype.startGame = function(gameMode) {
-        this.gameMode = gameMode;
-        return this.loadLevel(0);
-      };
-
-      GameModel.prototype.loadLevel = function(currentLevelIndex) {
-        var _ref;
-        this.currentLevelIndex = currentLevelIndex;
-        if (!((0 <= (_ref = this.currentLevelIndex) && _ref < FNT.GameModes.quest.levelData.length))) {
-          return;
-        }
-        this.currentLevelData = FNT.GameModes.quest.levelData[this.currentLevelIndex];
-        return this.level.load(this.currentLevelData.ringData);
+      GameModel.prototype.startGame = function() {
+        return this.levelSequence.start();
       };
 
       GameModel.prototype.startLevel = function() {
-        this.player.spawn(this.currentLevelData.spawnLocation);
-        return this.level.state.set(FNT.LevelStates.PLAYING);
+        this.player.spawn(this.levelSequence.getCurrentLevel().spawnLocation);
+        return this.levelSequence.state.set(FNT.LevelSequenceStates.PLAYING);
+      };
+
+      GameModel.prototype.nextLevel = function() {
+        return this.levelSequence.advance();
       };
 
       return GameModel;
@@ -569,25 +619,25 @@
 
       }
 
-      LevelActorContainer.prototype.create = function(scene, levelModel) {
+      LevelActorContainer.prototype.create = function(scene, levelSequence) {
         this.scene = scene;
-        this.levelModel = levelModel;
-        this.levelModel.addObserver(this);
+        this.levelSequence = levelSequence;
+        this.levelSequence.addObserver(this);
         this.scene.addChild(this);
         return this;
       };
 
       LevelActorContainer.prototype.handleEvent = function(event) {
-        switch (event.type) {
-          case FNT.LevelEvents.LOAD:
-            return this.loadLevel();
+        switch (event.data) {
+          case FNT.LevelSequenceStates.PREPARING:
+            return this.drawLevel();
         }
       };
 
-      LevelActorContainer.prototype.loadLevel = function() {
+      LevelActorContainer.prototype.drawLevel = function() {
         var ringActor, ringModel, _i, _j, _len, _len1, _ref, _ref1, _results;
         this._clearCurrentLevel();
-        _ref = this.levelModel.getRings();
+        _ref = this.levelSequence.getCurrentLevel().getRings();
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           ringModel = _ref[_i];
           this._create(ringModel);
@@ -656,7 +706,7 @@
       };
 
       LevelActorContainer.prototype._doneAnimating = function() {
-        return this.levelModel.state.set(FNT.LevelStates.LOADED);
+        return this.levelSequence.state.set(FNT.LevelSequenceStates.READY);
       };
 
       return LevelActorContainer;
@@ -729,19 +779,19 @@
         this.gameController = gameController;
         this.directorScene = director.createScene();
         this.directorScene.activated = function() {
-          return _this.gameModel.startGame(FNT.GameModes.quest);
+          return _this.gameModel.startGame();
         };
         this.directorScene.onRenderStart = function(deltaTime) {
           return _this.gameController.step();
         };
         this.backgroundContainer = new FNT.BackgroundContainer().create(this.directorScene, director.width, director.height);
-        this.createLevel(this.gameModel.level);
+        this.createLevelContainer(this.gameModel.levelSequence);
         this.createPlayer(this.gameModel.player);
         return this;
       };
 
-      GameSceneActor.prototype.createLevel = function(levelModel) {
-        return this.levelActorContainer = new FNT.LevelActorContainer().create(this.directorScene, levelModel).setSize(this.director.width, this.director.height).setLocation(0, 0);
+      GameSceneActor.prototype.createLevelContainer = function(levelSequence) {
+        return this.levelActorContainer = new FNT.LevelActorContainer().create(this.directorScene, levelSequence).setSize(this.director.width, this.director.height).setLocation(0, 0);
       };
 
       GameSceneActor.prototype.createPlayer = function(player) {
@@ -780,11 +830,8 @@
         this.keyboard.RESET.addListener(FNT.KeyDown, function() {
           return _this.reset();
         });
-        this.keyboard.NEXT_LEVEL.addListener(FNT.KeyDown, function() {
-          return _this.gameModel.loadLevel(_this.gameModel.currentLevelIndex + 1);
-        });
-        return this.keyboard.PREVIOUS_LEVEL.addListener(FNT.KeyDown, function() {
-          return _this.gameModel.loadLevel(_this.gameModel.currentLevelIndex - 1);
+        return this.keyboard.NEXT_LEVEL.addListener(FNT.KeyDown, function() {
+          return _this.gameModel.nextLevel();
         });
       };
 
@@ -800,12 +847,6 @@
   namespace("FNT", function(exports) {
     exports.KeyUp = "FNT_KEY_UP_EVENT";
     exports.KeyDown = "FNT_KEY_DOWN_EVENT";
-    exports.Keys = {
-      ORBIT: "FNT_KEYS_ORBIT",
-      RESET: "FNT_KEYS_RESET",
-      NEXT_LEVEL: "FNT_KEYS_NEXT_LEVEL",
-      PREVIOUS_LEVEL: "FNT_KEYS_PREVIOUS_LEVEL"
-    };
     exports.Key = (function() {
 
       function Key() {
@@ -844,18 +885,10 @@
     return exports.Keyboard = (function() {
 
       function Keyboard() {
-        var key, _i, _len, _ref;
-        this.currentState = {};
-        _ref = FNT.Keys;
-        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-          key = _ref[_i];
-          this.currentState[key] = FNT.KeyUp;
-        }
         this._keyMap = {};
         this._keyMap[CAAT.Keys.j] = this.ORBIT;
         this._keyMap[CAAT.Keys.r] = this.RESET;
         this._keyMap[CAAT.Keys.n] = this.NEXT_LEVEL;
-        this._keyMap[CAAT.Keys.p] = this.PREVIOUS_LEVEL;
         this;
 
       }
@@ -866,8 +899,6 @@
 
       Keyboard.prototype.NEXT_LEVEL = new FNT.Key();
 
-      Keyboard.prototype.PREVIOUS_LEVEL = new FNT.Key();
-
       Keyboard.prototype.UP = false;
 
       Keyboard.prototype.DOWN = false;
@@ -875,15 +906,6 @@
       Keyboard.prototype.LEFT = false;
 
       Keyboard.prototype.RIGHT = false;
-
-      Keyboard.prototype.listeners = {};
-
-      Keyboard.prototype.currentState = {
-        ORBIT: false,
-        RESET: false,
-        NEXT_LEVEL: false,
-        PREVIOUS_LEVEL: false
-      };
 
       Keyboard.prototype.create = function() {
         /*
@@ -923,16 +945,6 @@
           return FNT.KeyDown;
         } else {
           return FNT.KeyUp;
-        }
-      };
-
-      Keyboard.prototype.handleKeyEvent = function(keyEvent) {
-        var key, state;
-        key = this.keyMap[keyEvent.getKeyCode()];
-        state = this.getKeyState(keyEvent);
-        if (state !== this.currentState[key]) {
-          this.currentState[key] = state;
-          return this.notifyListeners(key, state);
         }
       };
 
@@ -1020,8 +1032,8 @@
 
       __extends(LevelCollision, _super);
 
-      function LevelCollision(levelModel, keyboard, useMass, callback) {
-        this.levelModel = levelModel;
+      function LevelCollision(levelSequence, keyboard, useMass, callback) {
+        this.levelSequence = levelSequence;
         this.keyboard = keyboard;
         this.useMass = useMass != null ? useMass : true;
         this.callback = callback != null ? callback : null;
@@ -1044,7 +1056,7 @@
       LevelCollision.prototype.handleCollisions = function(p) {
         var delta, dist, inner_perimeter, outer_perimeter, outward_force, overlap, ring, _i, _len, _ref, _results;
         this.onRing = false;
-        _ref = this.levelModel.getRings();
+        _ref = this.levelSequence.getCurrentLevel().getRings();
         _results = [];
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           ring = _ref[_i];
@@ -1111,8 +1123,8 @@
 
       __extends(Orbiter, _super);
 
-      function Orbiter(levelModel, keyboard, callback) {
-        this.levelModel = levelModel;
+      function Orbiter(levelSequence, keyboard, callback) {
+        this.levelSequence = levelSequence;
         this.keyboard = keyboard;
         this.callback = callback != null ? callback : null;
         this._delta = new Vector();
@@ -1187,7 +1199,7 @@
 
       Orbiter.prototype.findAttachableRing = function(p) {
         var dist, inner_perimeter, outer_perimeter, r, threshold, _i, _len, _ref;
-        _ref = this.levelModel.getRings();
+        _ref = this.levelSequence.getCurrentLevel().getRings();
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           r = _ref[_i];
           dist = this.distanceBetween(p, r);
@@ -1236,10 +1248,10 @@
 
       }
 
-      PlayerParticle.prototype.create = function(playerModel, levelModel, keyboard) {
+      PlayerParticle.prototype.create = function(playerModel, levelSequence, keyboard) {
         var _this = this;
         this.playerModel = playerModel;
-        this.levelModel = levelModel;
+        this.levelSequence = levelSequence;
         this.keyboard = keyboard;
         this.couplePosition = new FNT.CouplePosition(this.playerModel);
         this.keyboard.ORBIT.addListener(FNT.KeyDown, function() {
@@ -1249,8 +1261,8 @@
           return _this.setOrbitState(false);
         });
         this.setRadius(this.playerModel.radius);
-        this.levelCollision = new FNT.LevelCollision(this.levelModel, this.keyboard);
-        this.orbiter = new FNT.Orbiter(this.levelModel, this.keyboard, this.onOrbitStart);
+        this.levelCollision = new FNT.LevelCollision(this.levelSequence, this.keyboard);
+        this.orbiter = new FNT.Orbiter(this.levelSequence, this.keyboard, this.onOrbitStart);
         this.levelCollision.setActive(false);
         this.orbiter.setActive(false);
         this.behaviours.push(this.orbiter);
@@ -1268,7 +1280,7 @@
 
       PlayerParticle.prototype.clearState = function() {
         this.playerModel.state.set(FNT.PlayerStates.NORMAL);
-        return this.levelModel.resetAllRings();
+        return this.levelSequence.getCurrentLevel().resetAllRings();
       };
 
       PlayerParticle.prototype.handleEvent = function(event) {
@@ -1309,7 +1321,7 @@
         this.physics = new Physics(new Verlet());
         this.gravity = new ConstantForce(new Vector(0.0, 150.0));
         this.physics.behaviours.push(this.gravity);
-        this.initPlayerPhysics(this.gameModel.player, this.gameModel.level);
+        this.initPlayerPhysics(this.gameModel.player, this.gameModel.levelSequence);
         this.gameModel.addObserver(this);
         return this;
       };
@@ -1318,8 +1330,8 @@
         return this.physics.step();
       };
 
-      PhysicsController.prototype.initPlayerPhysics = function(playerModel, levelModel) {
-        this.player = new FNT.PlayerParticle().create(playerModel, levelModel, this.keyboard);
+      PhysicsController.prototype.initPlayerPhysics = function(playerModel, levelSequence) {
+        this.player = new FNT.PlayerParticle().create(playerModel, levelSequence, this.keyboard);
         return this.physics.particles.push(this.player);
       };
 
@@ -1345,10 +1357,10 @@
       };
 
       GameFactory.createGameModel = function() {
-        var levelModel, playerModel;
-        levelModel = FNT.LevelFactory.build();
+        var levelSequence, playerModel;
+        levelSequence = FNT.LevelSequenceFactory.build(FNT.GameModes.quest.levelData);
         playerModel = FNT.PlayerFactory.build();
-        return new FNT.GameModel(levelModel, playerModel);
+        return new FNT.GameModel(levelSequence, playerModel);
       };
 
       GameFactory.createGameController = function(gameModel) {

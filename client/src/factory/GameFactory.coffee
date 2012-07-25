@@ -10,10 +10,10 @@ namespace "FNT", (exports) ->
       return @createGameView(director, gameModel, gameController)
     
     @createGameModel: ->
-      levelModel = FNT.LevelFactory.build()
+      levelSequence = FNT.LevelSequenceFactory.build(FNT.GameModes.quest.levelData)
       playerModel = FNT.PlayerFactory.build()
       
-      return new FNT.GameModel(levelModel, playerModel)
+      return new FNT.GameModel(levelSequence, playerModel)
     
     @createGameController: (gameModel) ->
       keyboard = new FNT.Keyboard().create()
@@ -24,3 +24,5 @@ namespace "FNT", (exports) ->
       
     @createGameView: (director, gameModel, gameController) ->
       gameScene = FNT.GameSceneActorFactory.build(director, gameModel, gameController)
+      
+
