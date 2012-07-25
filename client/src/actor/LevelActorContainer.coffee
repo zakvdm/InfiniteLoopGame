@@ -23,10 +23,18 @@ namespace "FNT", (exports) ->
           @loadLevel()
       
     loadLevel: ->
+      @_clearCurrentLevel()
+      
       @completedRingActors = 0
       @_create ringModel for ringModel in @levelModel.getRings() # Create all the RingActors
       @_animate ringActor for ringActor in @ringActors # Animate them all into place
-      
+     
+    _clearCurrentLevel: ->
+      for ring in @ringActors
+        ring.setDiscardable(true).setExpired(true)
+        
+      @ringActors = []
+    
       
     _create: (ringModel) ->
       ringActor = new FNT.RingActor().create(ringModel)

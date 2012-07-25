@@ -6,12 +6,51 @@ namespace "FNT", (exports) ->
   exports.KeyDown = "FNT_KEY_DOWN_EVENT"
   
   exports.Keys =
-    ORBIT:   "FNT_KEYS_ORBIT"
-    RESET:   "FNT_KEYS_RESET"
+    ORBIT:           "FNT_KEYS_ORBIT"
+    RESET:           "FNT_KEYS_RESET"
+    NEXT_LEVEL:      "FNT_KEYS_NEXT_LEVEL"
+    PREVIOUS_LEVEL:  "FNT_KEYS_PREVIOUS_LEVEL"
+    
+  class exports.Key
+    constructor: ->
+      @state = FNT.KeyUp
+      @keyDownListeners = []
+      @keyUpListeners = []
+      @
+      
+    addListener: (keyEvent, callback) ->
+      switch keyEvent
+        when FNT.KeyUp
+          @keyUpListeners.push(callback)
+        when FNT.KeyDown
+          @keyDownListeners.push(callback)
+        else alert("WEIRD STUFF HAPPENING!")
+      
+    notifyListeners: ->
+      listeners = if @state is FNT.KeyDown then @keyDownListeners else @keyUpListeners
+      for callback in listeners
+        callback()
+      
+    
   
   class exports.Keyboard
-    constructor: () ->
+    constructor: ->
+      @currentState = {}
+      for key in FNT.Keys
+        @currentState[key] = FNT.KeyUp
+        
+      @_keyMap = {}
+      @_keyMap[CAAT.Keys.j]          = @ORBIT
+      @_keyMap[CAAT.Keys.r]          = @RESET
+      @_keyMap[CAAT.Keys.n]          = @NEXT_LEVEL
+      @_keyMap[CAAT.Keys.p]          = @PREVIOUS_LEVEL
+      
       @
+      
+    ORBIT:                 new FNT.Key()
+    RESET:                 new FNT.Key()
+    NEXT_LEVEL:            new FNT.Key()
+    PREVIOUS_LEVEL:        new FNT.Key()
       
     UP:           false
     DOWN:         false
@@ -21,10 +60,10 @@ namespace "FNT", (exports) ->
     listeners:   {}
     
     currentState:
-      ORBIT:
-        false
-      RESET:
-        false
+      ORBIT:             false
+      RESET:             false
+      NEXT_LEVEL:        false
+      PREVIOUS_LEVEL:    false
       
     create: ->
       ###
@@ -48,33 +87,39 @@ namespace "FNT", (exports) ->
       
     getKeyState: (keyEvent) ->
       keyEvent.preventDefault()
-      if keyEvent.getAction() is 'down' then true else false
+      if keyEvent.getAction() is 'down' then FNT.KeyDown else FNT.KeyUp
+    
+    handleKeyEvent: (keyEvent) ->
+      key = @keyMap[keyEvent.getKeyCode()]
+      state = @getKeyState(keyEvent)
+      if state != @currentState[key]
+        @currentState[key] = state
+        @notifyListeners(key, state)
       
-    toKeyEvent: (keyDownAction) ->
-      if keyDownAction then FNT.KeyDown else FNT.KeyUp
-          
+    _handleKeyEvent: (keyEvent) ->
+      key = @_keyMap[keyEvent.getKeyCode()]
+      newState = @getKeyState(keyEvent)
+      if newState != key.state
+        key.state = newState
+        key.notifyListeners()
+      
+      
     checkInput: (keyEvent) ->
       switch keyEvent.getKeyCode()
-        when CAAT.Keys.j
-          state = @getKeyState(keyEvent)
-          if state != @currentState.ORBIT
-            @currentState.ORBIT = state
-            @notifyListeners(FNT.Keys.ORBIT, @toKeyEvent(state))
-          
-        when CAAT.Keys.r
-          state = @getKeyState(keyEvent)
-          if state != @currentState.RESET
-            @currentState.RESET = state
-            @notifyListeners(FNT.Keys.RESET, @toKeyEvent(state))
-          
         when CAAT.Keys.UP, CAAT.Keys.w
-          @UP = @getKeyState(keyEvent)
+          @UP = @getKeyState(keyEvent) == FNT.KeyDown
           
         when CAAT.Keys.DOWN, CAAT.Keys.s
-          @DOWN = @getKeyState(keyEvent)
+          @DOWN = @getKeyState(keyEvent) == FNT.KeyDown
           
         when CAAT.Keys.LEFT, CAAT.Keys.a
-          @LEFT = @getKeyState(keyEvent)
+          @LEFT = @getKeyState(keyEvent) == FNT.KeyDown
           
         when CAAT.Keys.RIGHT, CAAT.Keys.d
-          @RIGHT = @getKeyState(keyEvent)
+          @RIGHT = @getKeyState(keyEvent) == FNT.KeyDown
+          
+        #else @handleKeyEvent(keyEvent)
+      
+      if keyEvent.getKeyCode() of @_keyMap
+        @_handleKeyEvent(keyEvent)
+        

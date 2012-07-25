@@ -40,7 +40,7 @@ namespace "FNT", (exports) ->
     setPosition: (pos) ->
       @position.set(pos.x, pos.y)
       @notifyObservers(FNT.PlayerEvents.NEW_POSITION, @)
-    
+      
     ### Spawn in the given LevelModel at the given spawnLocation ### 
     spawn: (spawnLocation) ->
       @position.x = spawnLocation.x

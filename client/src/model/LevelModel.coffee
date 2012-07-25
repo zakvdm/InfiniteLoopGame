@@ -23,13 +23,14 @@ namespace "FNT", (exports) ->
   class exports.LevelModel extends FNT.ObservableModel
     constructor: ->
       super()
-      @rings = []
       @
       
     create: ->
       @
      
     load : (ringData) ->
+      @rings = []
+      
       for ring in ringData
         @rings.push new FNT.RingModel().create(ring)
       

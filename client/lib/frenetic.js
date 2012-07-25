@@ -284,7 +284,6 @@
 
       function LevelModel() {
         LevelModel.__super__.constructor.call(this);
-        this.rings = [];
         this;
 
       }
@@ -295,6 +294,7 @@
 
       LevelModel.prototype.load = function(ringData) {
         var ring, _i, _len;
+        this.rings = [];
         for (_i = 0, _len = ringData.length; _i < _len; _i++) {
           ring = ringData[_i];
           this.rings.push(new FNT.RingModel().create(ring));
@@ -356,8 +356,13 @@
         return this.loadLevel(0);
       };
 
-      GameModel.prototype.loadLevel = function(levelIndex) {
-        this.currentLevelData = FNT.GameModes.quest.levelData[levelIndex];
+      GameModel.prototype.loadLevel = function(currentLevelIndex) {
+        var _ref;
+        this.currentLevelIndex = currentLevelIndex;
+        if (!((0 <= (_ref = this.currentLevelIndex) && _ref < FNT.GameModes.quest.levelData.length))) {
+          return;
+        }
+        this.currentLevelData = FNT.GameModes.quest.levelData[this.currentLevelIndex];
         return this.level.load(this.currentLevelData.ringData);
       };
 
@@ -567,6 +572,7 @@
 
       LevelActorContainer.prototype.loadLevel = function() {
         var ringActor, ringModel, _i, _j, _len, _len1, _ref, _ref1, _results;
+        this._clearCurrentLevel();
         this.completedRingActors = 0;
         _ref = this.levelModel.getRings();
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
@@ -580,6 +586,16 @@
           _results.push(this._animate(ringActor));
         }
         return _results;
+      };
+
+      LevelActorContainer.prototype._clearCurrentLevel = function() {
+        var ring, _i, _len, _ref;
+        _ref = this.ringActors;
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          ring = _ref[_i];
+          ring.setDiscardable(true).setExpired(true);
+        }
+        return this.ringActors = [];
       };
 
       LevelActorContainer.prototype._create = function(ringModel) {
@@ -723,13 +739,10 @@
     return exports.GameController = (function() {
 
       function GameController(gameModel, physicsController, keyboard) {
-        var _this = this;
         this.gameModel = gameModel;
         this.physicsController = physicsController;
         this.keyboard = keyboard;
-        this.keyboard.addListener(FNT.Keys.RESET, FNT.KeyDown, function() {
-          return _this.reset();
-        });
+        this.registerKeyListeners(this.keyboard);
         this;
 
       }
@@ -742,6 +755,19 @@
 
       GameController.prototype.reset = function() {
         return this.gameModel.startLevel();
+      };
+
+      GameController.prototype.registerKeyListeners = function() {
+        var _this = this;
+        this.keyboard.RESET.addListener(FNT.KeyDown, function() {
+          return _this.reset();
+        });
+        this.keyboard.NEXT_LEVEL.addListener(FNT.KeyDown, function() {
+          return _this.gameModel.loadLevel(_this.gameModel.currentLevelIndex + 1);
+        });
+        return this.keyboard.PREVIOUS_LEVEL.addListener(FNT.KeyDown, function() {
+          return _this.gameModel.loadLevel(_this.gameModel.currentLevelIndex - 1);
+        });
       };
 
       return GameController;
@@ -758,14 +784,71 @@
     exports.KeyDown = "FNT_KEY_DOWN_EVENT";
     exports.Keys = {
       ORBIT: "FNT_KEYS_ORBIT",
-      RESET: "FNT_KEYS_RESET"
+      RESET: "FNT_KEYS_RESET",
+      NEXT_LEVEL: "FNT_KEYS_NEXT_LEVEL",
+      PREVIOUS_LEVEL: "FNT_KEYS_PREVIOUS_LEVEL"
     };
-    return exports.Keyboard = (function() {
+    exports.Key = (function() {
 
-      function Keyboard() {
+      function Key() {
+        this.state = FNT.KeyUp;
+        this.keyDownListeners = [];
+        this.keyUpListeners = [];
         this;
 
       }
+
+      Key.prototype.addListener = function(keyEvent, callback) {
+        switch (keyEvent) {
+          case FNT.KeyUp:
+            return this.keyUpListeners.push(callback);
+          case FNT.KeyDown:
+            return this.keyDownListeners.push(callback);
+          default:
+            return alert("WEIRD STUFF HAPPENING!");
+        }
+      };
+
+      Key.prototype.notifyListeners = function() {
+        var callback, listeners, _i, _len, _results;
+        listeners = this.state === FNT.KeyDown ? this.keyDownListeners : this.keyUpListeners;
+        _results = [];
+        for (_i = 0, _len = listeners.length; _i < _len; _i++) {
+          callback = listeners[_i];
+          _results.push(callback());
+        }
+        return _results;
+      };
+
+      return Key;
+
+    })();
+    return exports.Keyboard = (function() {
+
+      function Keyboard() {
+        var key, _i, _len, _ref;
+        this.currentState = {};
+        _ref = FNT.Keys;
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          key = _ref[_i];
+          this.currentState[key] = FNT.KeyUp;
+        }
+        this._keyMap = {};
+        this._keyMap[CAAT.Keys.j] = this.ORBIT;
+        this._keyMap[CAAT.Keys.r] = this.RESET;
+        this._keyMap[CAAT.Keys.n] = this.NEXT_LEVEL;
+        this._keyMap[CAAT.Keys.p] = this.PREVIOUS_LEVEL;
+        this;
+
+      }
+
+      Keyboard.prototype.ORBIT = new FNT.Key();
+
+      Keyboard.prototype.RESET = new FNT.Key();
+
+      Keyboard.prototype.NEXT_LEVEL = new FNT.Key();
+
+      Keyboard.prototype.PREVIOUS_LEVEL = new FNT.Key();
 
       Keyboard.prototype.UP = false;
 
@@ -779,7 +862,9 @@
 
       Keyboard.prototype.currentState = {
         ORBIT: false,
-        RESET: false
+        RESET: false,
+        NEXT_LEVEL: false,
+        PREVIOUS_LEVEL: false
       };
 
       Keyboard.prototype.create = function() {
@@ -817,49 +902,52 @@
       Keyboard.prototype.getKeyState = function(keyEvent) {
         keyEvent.preventDefault();
         if (keyEvent.getAction() === 'down') {
-          return true;
-        } else {
-          return false;
-        }
-      };
-
-      Keyboard.prototype.toKeyEvent = function(keyDownAction) {
-        if (keyDownAction) {
           return FNT.KeyDown;
         } else {
           return FNT.KeyUp;
         }
       };
 
+      Keyboard.prototype.handleKeyEvent = function(keyEvent) {
+        var key, state;
+        key = this.keyMap[keyEvent.getKeyCode()];
+        state = this.getKeyState(keyEvent);
+        if (state !== this.currentState[key]) {
+          this.currentState[key] = state;
+          return this.notifyListeners(key, state);
+        }
+      };
+
+      Keyboard.prototype._handleKeyEvent = function(keyEvent) {
+        var key, newState;
+        key = this._keyMap[keyEvent.getKeyCode()];
+        newState = this.getKeyState(keyEvent);
+        if (newState !== key.state) {
+          key.state = newState;
+          return key.notifyListeners();
+        }
+      };
+
       Keyboard.prototype.checkInput = function(keyEvent) {
-        var state;
         switch (keyEvent.getKeyCode()) {
-          case CAAT.Keys.j:
-            state = this.getKeyState(keyEvent);
-            if (state !== this.currentState.ORBIT) {
-              this.currentState.ORBIT = state;
-              return this.notifyListeners(FNT.Keys.ORBIT, this.toKeyEvent(state));
-            }
-            break;
-          case CAAT.Keys.r:
-            state = this.getKeyState(keyEvent);
-            if (state !== this.currentState.RESET) {
-              this.currentState.RESET = state;
-              return this.notifyListeners(FNT.Keys.RESET, this.toKeyEvent(state));
-            }
-            break;
           case CAAT.Keys.UP:
           case CAAT.Keys.w:
-            return this.UP = this.getKeyState(keyEvent);
+            this.UP = this.getKeyState(keyEvent) === FNT.KeyDown;
+            break;
           case CAAT.Keys.DOWN:
           case CAAT.Keys.s:
-            return this.DOWN = this.getKeyState(keyEvent);
+            this.DOWN = this.getKeyState(keyEvent) === FNT.KeyDown;
+            break;
           case CAAT.Keys.LEFT:
           case CAAT.Keys.a:
-            return this.LEFT = this.getKeyState(keyEvent);
+            this.LEFT = this.getKeyState(keyEvent) === FNT.KeyDown;
+            break;
           case CAAT.Keys.RIGHT:
           case CAAT.Keys.d:
-            return this.RIGHT = this.getKeyState(keyEvent);
+            this.RIGHT = this.getKeyState(keyEvent) === FNT.KeyDown;
+        }
+        if (keyEvent.getKeyCode() in this._keyMap) {
+          return this._handleKeyEvent(keyEvent);
         }
       };
 
@@ -1136,10 +1224,10 @@
         this.levelModel = levelModel;
         this.keyboard = keyboard;
         this.couplePosition = new FNT.CouplePosition(this.playerModel);
-        this.keyboard.addListener(FNT.Keys.ORBIT, FNT.KeyDown, function() {
+        this.keyboard.ORBIT.addListener(FNT.KeyDown, function() {
           return _this.setOrbitState(true);
         });
-        this.keyboard.addListener(FNT.Keys.ORBIT, FNT.KeyUp, function() {
+        this.keyboard.ORBIT.addListener(FNT.KeyUp, function() {
           return _this.setOrbitState(false);
         });
         this.setRadius(this.playerModel.radius);

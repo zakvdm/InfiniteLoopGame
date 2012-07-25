@@ -20,8 +20,10 @@ namespace "FNT", (exports) ->
     startGame: (@gameMode) ->
       @loadLevel(0)
 
-    loadLevel: (levelIndex) ->
-      @currentLevelData = FNT.GameModes.quest.levelData[levelIndex];
+    loadLevel: (@currentLevelIndex) ->
+      if not (0 <= @currentLevelIndex < FNT.GameModes.quest.levelData.length) then return
+      
+      @currentLevelData = FNT.GameModes.quest.levelData[@currentLevelIndex];
       @level.load(this.currentLevelData.ringData);
 
     startLevel: ->

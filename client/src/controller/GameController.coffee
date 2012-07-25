@@ -3,7 +3,7 @@ namespace "FNT", (exports) ->
 
   class exports.GameController
     constructor: (@gameModel, @physicsController, @keyboard) ->
-      @keyboard.addListener(FNT.Keys.RESET, FNT.KeyDown, => @reset())
+      @registerKeyListeners(@keyboard)
       @
 
     step: ->
@@ -12,4 +12,9 @@ namespace "FNT", (exports) ->
 
     reset: ->
       @gameModel.startLevel()
+    
+    registerKeyListeners: ->      
+      @keyboard.RESET.addListener(FNT.KeyDown, => @reset())
+      @keyboard.NEXT_LEVEL.addListener(FNT.KeyDown, => @gameModel.loadLevel(@gameModel.currentLevelIndex + 1))
+      @keyboard.PREVIOUS_LEVEL.addListener(FNT.KeyDown, => @gameModel.loadLevel(@gameModel.currentLevelIndex - 1))
       

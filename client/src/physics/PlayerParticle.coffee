@@ -10,8 +10,11 @@ namespace "FNT", (exports) ->
     create: (@playerModel, @levelModel, @keyboard) ->
       @couplePosition = new FNT.CouplePosition(@playerModel)
         
-      @keyboard.addListener(FNT.Keys.ORBIT, FNT.KeyDown, => @setOrbitState(true))
-      @keyboard.addListener(FNT.Keys.ORBIT, FNT.KeyUp, => @setOrbitState(false))
+      #@keyboard.addListener(FNT.Keys.ORBIT, FNT.KeyDown, => @setOrbitState(true))
+      #@keyboard.addListener(FNT.Keys.ORBIT, FNT.KeyUp, => @setOrbitState(false))
+
+      @keyboard.ORBIT.addListener(FNT.KeyDown, => @setOrbitState(true))
+      @keyboard.ORBIT.addListener(FNT.KeyUp, => @setOrbitState(false))
 
       @setRadius(@playerModel.radius)
 
