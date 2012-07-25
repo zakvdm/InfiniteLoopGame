@@ -1,4 +1,4 @@
-### This class models a Frenetic Player's interaction with the physics system ###
+### This class models a Player's interaction with the physics system ###
 
 namespace "FNT", (exports) ->
 
@@ -10,9 +10,6 @@ namespace "FNT", (exports) ->
     create: (@playerModel, @levelSequence, @keyboard) ->
       @couplePosition = new FNT.CouplePosition(@playerModel)
         
-      #@keyboard.addListener(FNT.Keys.ORBIT, FNT.KeyDown, => @setOrbitState(true))
-      #@keyboard.addListener(FNT.Keys.ORBIT, FNT.KeyUp, => @setOrbitState(false))
-
       @keyboard.ORBIT.addListener(FNT.KeyDown, => @setOrbitState(true))
       @keyboard.ORBIT.addListener(FNT.KeyUp, => @setOrbitState(false))
 
@@ -39,7 +36,7 @@ namespace "FNT", (exports) ->
 
     clearState: ->
       @playerModel.state.set(FNT.PlayerStates.NORMAL)
-      @levelSequence.getCurrentLevel().resetAllRings()
+      @levelSequence.currentLevel().resetAllRings()
 
     handleEvent: (event) ->
       switch event.type

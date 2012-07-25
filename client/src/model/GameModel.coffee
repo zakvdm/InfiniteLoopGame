@@ -21,7 +21,7 @@ namespace "FNT", (exports) ->
       @levelSequence.start()
 
     startLevel: ->
-      @player.spawn(@levelSequence.getCurrentLevel().spawnLocation)
+      @player.spawn(@levelSequence.currentLevel().spawnLocation)
       @levelSequence.state.set(FNT.LevelSequenceStates.PLAYING)
       
     nextLevel: ->

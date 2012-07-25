@@ -8,7 +8,7 @@ namespace "FNT", (exports) ->
         levelData: [
            {  # LEVEL 0
                spawnLocation :    {x: 312, y: 200},
-               nextLevelLocation: {x: 400, y: 100},
+               exit: {x: 400, y: 100},
                ringData : [  
                             {x: 500, y: 500, diameter: 900},
                             {x: 100, y: 300, diameter: 190},
@@ -20,19 +20,27 @@ namespace "FNT", (exports) ->
                             {x: 800, y: 300, diameter: 250}],
            },
            {  # LEVEL 1
-               spawnLocation : {x: 80, y: 200},
-               exit: {x: 850, y: 200},
-               ringData : [  
-                            {x: 100, y: 800, diameter: 100}
-                            {x: 500, y: 800, diameter: 100}
-                            {x: 900, y: 800, diameter: 100}
-                            {x: 900, y: 500, diameter: 50}],
+               spawnLocation : {x: 512, y: 800},
+               exit: {x: 300, y: 300},
+               ringData : [
+                            {x: 500, y: 500, diameter: 1000},
+                            {x: 500, y: 500, diameter: 300},
+                            {x: 100, y: 100, diameter: 100}],
            },
            {  # LEVEL 2
+               spawnLocation : {x: 80, y: 200},
+               exit: {x: 200, y: 100},
+               ringData : [  
+                            {x: 100, y: 800, diameter: 150}
+                            {x: 550, y: 750, diameter: 150}
+                            {x: 900, y: 600, diameter: 150}
+                            {x: 600, y: 300, diameter: 150}],
+           },
+           {  # LEVEL 3
                spawnLocation : {x: 512, y: 800},
+               exit: {x: 300, y: 300},
                ringData : [
-                            {x: 512, y: 512, diameter: 1000},
-                            {x: 100, y: 100, diameter: 100}],
+                            {x: 500, y: 500, diameter: 1000},],
            },
         ]
       # RACE MODE

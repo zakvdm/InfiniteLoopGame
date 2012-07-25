@@ -76,7 +76,7 @@
               x: 312,
               y: 200
             },
-            nextLevelLocation: {
+            exit: {
               x: 400,
               y: 100
             },
@@ -117,30 +117,54 @@
             ]
           }, {
             spawnLocation: {
+              x: 512,
+              y: 800
+            },
+            exit: {
+              x: 300,
+              y: 300
+            },
+            ringData: [
+              {
+                x: 500,
+                y: 500,
+                diameter: 1000
+              }, {
+                x: 500,
+                y: 500,
+                diameter: 300
+              }, {
+                x: 100,
+                y: 100,
+                diameter: 100
+              }
+            ]
+          }, {
+            spawnLocation: {
               x: 80,
               y: 200
             },
             exit: {
-              x: 850,
-              y: 200
+              x: 200,
+              y: 100
             },
             ringData: [
               {
                 x: 100,
                 y: 800,
-                diameter: 100
+                diameter: 150
               }, {
-                x: 500,
-                y: 800,
-                diameter: 100
-              }, {
-                x: 900,
-                y: 800,
-                diameter: 100
+                x: 550,
+                y: 750,
+                diameter: 150
               }, {
                 x: 900,
-                y: 500,
-                diameter: 50
+                y: 600,
+                diameter: 150
+              }, {
+                x: 600,
+                y: 300,
+                diameter: 150
               }
             ]
           }, {
@@ -148,15 +172,15 @@
               x: 512,
               y: 800
             },
+            exit: {
+              x: 300,
+              y: 300
+            },
             ringData: [
               {
-                x: 512,
-                y: 512,
+                x: 500,
+                y: 500,
                 diameter: 1000
-              }, {
-                x: 100,
-                y: 100,
-                diameter: 100
               }
             ]
           }
@@ -300,6 +324,7 @@
       LevelModel.prototype.load = function(levelData) {
         var ring, _i, _len, _ref, _results;
         this.spawnLocation = levelData.spawnLocation;
+        this.exit = levelData.exit;
         this.rings = [];
         _ref = levelData.ringData;
         _results = [];
@@ -362,29 +387,34 @@
 
       __extends(LevelSequence, _super);
 
-      function LevelSequence(levels) {
-        this.levels = levels != null ? levels : [];
+      function LevelSequence(_levels) {
+        this._levels = _levels != null ? _levels : [];
+        this._currentIndex = 0;
         LevelSequence.__super__.constructor.call(this);
         this;
 
       }
 
       LevelSequence.prototype.addLevel = function(levelModel) {
-        return this.levels.push(levelModel);
+        return this._levels.push(levelModel);
       };
 
       LevelSequence.prototype.start = function() {
-        this.currentLevel = 0;
+        this._currentIndex = 0;
         return this.state.set(FNT.LevelSequenceStates.PREPARING);
       };
 
-      LevelSequence.prototype.getCurrentLevel = function() {
-        return this.levels[this.currentLevel];
+      LevelSequence.prototype.currentLevel = function() {
+        return this._levels[this._currentIndex];
+      };
+
+      LevelSequence.prototype.nextLevel = function() {
+        return this._levels[this._currentIndex + 1];
       };
 
       LevelSequence.prototype.advance = function() {
-        if (this.currentLevel < (this.levels.length - 2)) {
-          this.currentLevel += 1;
+        if (this._currentIndex < (this._levels.length - 2)) {
+          this._currentIndex += 1;
         }
         return this.state.set(FNT.LevelSequenceStates.PREPARING);
       };
@@ -426,7 +456,7 @@
       };
 
       GameModel.prototype.startLevel = function() {
-        this.player.spawn(this.levelSequence.getCurrentLevel().spawnLocation);
+        this.player.spawn(this.levelSequence.currentLevel().spawnLocation);
         return this.levelSequence.state.set(FNT.LevelSequenceStates.PLAYING);
       };
 
@@ -574,13 +604,16 @@
 
       }
 
-      RingActor.prototype.create = function(ring) {
+      RingActor.prototype.create = function(ring, alpha) {
         this.ring = ring;
+        if (alpha == null) {
+          alpha = 0.5;
+        }
         this.setDiameter(ring.diameter);
         this.setPosition(ring.position);
         this.setStrokeStyle('#0');
         this.setFillStyle('#AAA');
-        this.setAlpha(0.5);
+        this.setAlpha(alpha);
         this.ring.addObserver(this);
         return this;
       };
@@ -608,6 +641,79 @@
   });
 
   namespace("FNT", function(exports) {
+    return exports.PortalBorderActor = (function(_super) {
+
+      __extends(PortalBorderActor, _super);
+
+      function PortalBorderActor() {
+        PortalBorderActor.__super__.constructor.call(this);
+        this;
+
+      }
+
+      PortalBorderActor.prototype.create = function(diameter, position) {
+        this.setDiameter(diameter);
+        this.setPosition(position);
+        this.setFillStyle('gold');
+        this.setAlpha(1);
+        return this;
+      };
+
+      return PortalBorderActor;
+
+    })(FNT.CircleActor);
+  });
+
+  namespace("FNT", function(exports) {
+    exports.NextLevelPortal = (function(_super) {
+
+      __extends(NextLevelPortal, _super);
+
+      NextLevelPortal.SCALE = 0.05;
+
+      function NextLevelPortal() {
+        NextLevelPortal.__super__.constructor.call(this);
+        this.ringActors = [];
+        this;
+
+      }
+
+      NextLevelPortal.prototype.prepare = function(levelModel, width, height) {
+        var ringModel, _i, _len, _ref;
+        this.levelModel = levelModel;
+        this.setSize(width, height);
+        this._createBorder(width);
+        _ref = this.levelModel.getRings();
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          ringModel = _ref[_i];
+          this._create(ringModel);
+        }
+        this.setScale(FNT.NextLevelPortal.SCALE, FNT.NextLevelPortal.SCALE);
+        return this;
+      };
+
+      NextLevelPortal.prototype._createBorder = function(sceneWidth) {
+        var diameter, position, r;
+        r = sceneWidth / 2;
+        position = {
+          x: r,
+          y: r
+        };
+        diameter = Math.sqrt(2 * sceneWidth * sceneWidth);
+        this.borderActor = new FNT.PortalBorderActor().create(diameter, position);
+        return this.addChild(this.borderActor);
+      };
+
+      NextLevelPortal.prototype._create = function(ringModel) {
+        var ringActor;
+        ringActor = new FNT.RingActor().create(ringModel, 0.8);
+        this.ringActors.push(ringActor);
+        return this.addChild(ringActor);
+      };
+
+      return NextLevelPortal;
+
+    })(CAAT.ActorContainer);
     return exports.LevelActorContainer = (function(_super) {
 
       __extends(LevelActorContainer, _super);
@@ -635,20 +741,27 @@
       };
 
       LevelActorContainer.prototype.drawLevel = function() {
-        var ringActor, ringModel, _i, _j, _len, _len1, _ref, _ref1, _results;
+        var exitLocation, ringActor, ringModel, _i, _j, _len, _len1, _ref, _ref1;
         this._clearCurrentLevel();
-        _ref = this.levelSequence.getCurrentLevel().getRings();
+        _ref = this.levelSequence.currentLevel().getRings();
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           ringModel = _ref[_i];
           this._create(ringModel);
         }
         _ref1 = this.ringActors;
-        _results = [];
         for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
           ringActor = _ref1[_j];
-          _results.push(this._animate(ringActor));
+          this._animate(ringActor);
         }
-        return _results;
+        if (this.nextLevelPortal != null) {
+          this.removeChild(this.nextLevelPortal);
+          this.nextLevelPortal.setDiscardable(true).setExpired(true);
+        }
+        this.nextLevelPortal = new FNT.NextLevelPortal().prepare(this.levelSequence.nextLevel(), this.width, this.height);
+        exitLocation = this.levelSequence.currentLevel().exit;
+        this.nextLevelPortal.centerAt(exitLocation.x, exitLocation.y);
+        this.addChild(this.nextLevelPortal);
+        return this;
       };
 
       LevelActorContainer.prototype._clearCurrentLevel = function() {
@@ -988,6 +1101,7 @@
 
   namespace("FNT", function(exports) {
     return exports.PhysicsConstants = {
+      GRAVITY: new Vector(0, 200.0),
       MOVE_SPEED: 200,
       JUMP_SPEED: -200,
       AIR_MOVE_SPEED: 60,
@@ -1056,7 +1170,7 @@
       LevelCollision.prototype.handleCollisions = function(p) {
         var delta, dist, inner_perimeter, outer_perimeter, outward_force, overlap, ring, _i, _len, _ref, _results;
         this.onRing = false;
-        _ref = this.levelSequence.getCurrentLevel().getRings();
+        _ref = this.levelSequence.currentLevel().getRings();
         _results = [];
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           ring = _ref[_i];
@@ -1199,7 +1313,7 @@
 
       Orbiter.prototype.findAttachableRing = function(p) {
         var dist, inner_perimeter, outer_perimeter, r, threshold, _i, _len, _ref;
-        _ref = this.levelSequence.getCurrentLevel().getRings();
+        _ref = this.levelSequence.currentLevel().getRings();
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           r = _ref[_i];
           dist = this.distanceBetween(p, r);
@@ -1233,7 +1347,39 @@
     })(Behaviour);
   });
 
-  /* This class models a Frenetic Player's interaction with the physics system
+  /* This behaviour calls a callback when particles enter a specific circle
+  */
+
+
+  namespace("FNT", function(exports) {
+    return exports.Portal = (function(_super) {
+
+      __extends(Portal, _super);
+
+      function Portal(position, radius, callback) {
+        this.position = position;
+        this.radius = radius;
+        this.callback = callback;
+        Portal.__super__.constructor.call(this);
+        this._delta = new Vector();
+        this;
+
+      }
+
+      Portal.prototype.apply = function(p, dt, index) {
+        var dist;
+        dist = this._delta.copy(this.position).sub(p.pos).mag();
+        if (dist < this.radius) {
+          return this.callback();
+        }
+      };
+
+      return Portal;
+
+    })(Behaviour);
+  });
+
+  /* This class models a Player's interaction with the physics system
   */
 
 
@@ -1280,7 +1426,7 @@
 
       PlayerParticle.prototype.clearState = function() {
         this.playerModel.state.set(FNT.PlayerStates.NORMAL);
-        return this.levelSequence.getCurrentLevel().resetAllRings();
+        return this.levelSequence.currentLevel().resetAllRings();
       };
 
       PlayerParticle.prototype.handleEvent = function(event) {
@@ -1316,12 +1462,17 @@
       function PhysicsController() {}
 
       PhysicsController.prototype.create = function(gameModel, keyboard) {
+        var _this = this;
         this.gameModel = gameModel;
         this.keyboard = keyboard;
         this.physics = new Physics(new Verlet());
-        this.gravity = new ConstantForce(new Vector(0.0, 150.0));
+        this.gravity = new ConstantForce(FNT.PhysicsConstants.GRAVITY);
         this.physics.behaviours.push(this.gravity);
         this.initPlayerPhysics(this.gameModel.player, this.gameModel.levelSequence);
+        this.portal = new FNT.Portal(this._getPortalPosition(), 50, function() {
+          return _this.onPortalCollision();
+        });
+        this.physics.behaviours.push(this.portal);
         this.gameModel.addObserver(this);
         return this;
       };
@@ -1333,6 +1484,15 @@
       PhysicsController.prototype.initPlayerPhysics = function(playerModel, levelSequence) {
         this.player = new FNT.PlayerParticle().create(playerModel, levelSequence, this.keyboard);
         return this.physics.particles.push(this.player);
+      };
+
+      PhysicsController.prototype.onPortalCollision = function() {
+        this.gameModel.nextLevel();
+        return this.portal.position = this._getPortalPosition();
+      };
+
+      PhysicsController.prototype._getPortalPosition = function() {
+        return new Vector(this.gameModel.levelSequence.currentLevel().exit.x, this.gameModel.levelSequence.currentLevel().exit.y);
       };
 
       return PhysicsController;

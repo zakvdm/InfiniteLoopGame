@@ -1,6 +1,8 @@
 namespace "FNT", (exports) ->
   
   exports.PhysicsConstants =
+    # GLOBAL:
+    GRAVITY:                     new Vector(0, 200.0)
     # NORMAL MOVEMENT:
     MOVE_SPEED:                  200
     JUMP_SPEED:                 -200
@@ -13,4 +15,4 @@ namespace "FNT", (exports) ->
     MINIMUM_INNER_ORBIT_OFFSET:  6
     MINIMUM_OUTER_ORBIT_OFFSET:  6
     ORBIT_CHANGE_PER_SECOND:     6
-
+    

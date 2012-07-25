@@ -69,7 +69,7 @@ namespace "FNT", (exports) ->
       
 
     findAttachableRing: (p) ->
-      for r in @levelSequence.getCurrentLevel().getRings() # ring is FNT.RingModel
+      for r in @levelSequence.currentLevel().getRings() # ring is FNT.RingModel
         dist = @distanceBetween(p, r)
   
         outer_perimeter = r.radius + p.radius

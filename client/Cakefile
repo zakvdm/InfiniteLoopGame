@@ -25,6 +25,7 @@ files = [
         'actor/CircleActor'
         'actor/PlayerActor'
         'actor/RingActor'
+        'actor/PortalBorderActor'
         'actor/LevelActorContainer'
         'actor/BackgroundContainer'
         'actor/GameSceneActor'
@@ -40,6 +41,7 @@ files = [
         'physics/behaviour/CouplePosition'
         'physics/behaviour/LevelCollision'
         'physics/behaviour/Orbiter'
+        'physics/behaviour/Portal'
         'physics/PlayerParticle'
         'physics/PhysicsController'
         

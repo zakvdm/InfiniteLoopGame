@@ -5,13 +5,13 @@ namespace "FNT", (exports) ->
       super()
       @
       
-    create: (@ring) ->
+    create: (@ring, alpha = 0.5) ->
       @setDiameter(ring.diameter)
       @setPosition(ring.position)
   
       @setStrokeStyle('#0')
       @setFillStyle('#AAA')
-      @setAlpha(0.5)
+      @setAlpha(alpha)
   
       # Register for Ring Events
       @ring.addObserver(this)

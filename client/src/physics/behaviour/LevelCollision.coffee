@@ -22,7 +22,7 @@ namespace "FNT", (exports) ->
     handleCollisions: (p) ->  
       @onRing = false
       
-      for ring in @levelSequence.getCurrentLevel().getRings() # ring is FNT.RingModel
+      for ring in @levelSequence.currentLevel().getRings() # ring is FNT.RingModel
         @_delta.copy(p.pos).sub(ring.position) # delta points from ring.position to p.pos
         
         # Distance from the particle centre to the Ring centre

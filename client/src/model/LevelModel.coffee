@@ -17,6 +17,8 @@ namespace "FNT", (exports) ->
       
     load: (levelData) ->
       @spawnLocation = levelData.spawnLocation
+      @exit = levelData.exit
+      
       @rings = []
       
       for ring in levelData.ringData

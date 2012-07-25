@@ -41,7 +41,7 @@ namespace "FNT", (exports) ->
                             create(@directorScene, levelSequence).
                             setSize(@director.width, @director.height).
                             setLocation(0, 0)
-  
+                            
     createPlayer : (player) ->
       @playerActor = new FNT.PlayerActor().
                            create(@directorScene, player)
