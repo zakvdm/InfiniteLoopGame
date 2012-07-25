@@ -78,12 +78,12 @@
             },
             ringData: [
               {
-                x: 512,
-                y: 512,
+                x: 500,
+                y: 500,
                 diameter: 900
               }, {
                 x: 100,
-                y: 400,
+                y: 300,
                 diameter: 190
               }, {
                 x: 300,
@@ -94,12 +94,12 @@
                 y: 512,
                 diameter: 100
               }, {
-                x: 850,
-                y: 600,
+                x: 750,
+                y: 800,
                 diameter: 320
               }, {
-                x: 950,
-                y: 500,
+                x: 820,
+                y: 680,
                 diameter: 120
               }, {
                 x: 600,
@@ -113,18 +113,30 @@
             ]
           }, {
             spawnLocation: {
-              x: 1000,
-              y: 512
+              x: 80,
+              y: 200
             },
             exit: {
-              x: 980,
-              y: 480
+              x: 850,
+              y: 200
             },
             ringData: [
               {
-                x: 512,
-                y: 512,
-                diameter: 1024
+                x: 100,
+                y: 800,
+                diameter: 100
+              }, {
+                x: 500,
+                y: 800,
+                diameter: 100
+              }, {
+                x: 900,
+                y: 800,
+                diameter: 100
+              }, {
+                x: 900,
+                y: 500,
+                diameter: 50
               }
             ]
           }, {
@@ -261,7 +273,8 @@
       LOAD: "level_event_load"
     };
     exports.LevelStates = {
-      LOADED: "level_state_loaded"
+      LOADED: "level_state_loaded",
+      PLAYING: "level_state_playing"
     };
     exports.LevelFactory = (function() {
 
@@ -367,7 +380,8 @@
       };
 
       GameModel.prototype.startLevel = function() {
-        return this.player.spawn(this.currentLevelData.spawnLocation);
+        this.player.spawn(this.currentLevelData.spawnLocation);
+        return this.level.state.set(FNT.LevelStates.PLAYING);
       };
 
       return GameModel;
@@ -616,14 +630,14 @@
       */
 
 
-      LevelActorContainer.prototype._animateInUsingScale = function(actor, startTime, endTime, startScale, endScale) {
+      LevelActorContainer.prototype._animateInUsingScale = function(actor, startTime, duration, startScale, endScale) {
         var scaleBehavior,
           _this = this;
         scaleBehavior = new CAAT.ScaleBehavior();
         scaleBehavior.anchor = CAAT.Actor.prototype.ANCHOR_CENTER;
         actor.scaleX = actor.scaleY = scaleBehavior.startScaleX = scaleBehavior.startScaleY = startScale;
         scaleBehavior.endScaleX = scaleBehavior.endScaleY = endScale;
-        scaleBehavior.setFrameTime(startTime, startTime + endTime);
+        scaleBehavior.setFrameTime(startTime, duration);
         scaleBehavior.setCycle(false);
         scaleBehavior.setInterpolator(new CAAT.Interpolator().createBounceOutInterpolator(false));
         actor.addBehavior(scaleBehavior);
@@ -1380,7 +1394,7 @@
   };
 
   createCanvas = function() {
-    return new CAAT.Director().initialize(1024, 1024).setClear(false);
+    return new CAAT.Director().initialize(1000, 1000).setClear(false);
   };
 
   __frenetic_init = function() {

@@ -8,6 +8,7 @@ namespace "FNT", (exports) ->
   # LEVEL STATES
   exports.LevelStates =
     LOADED:           "level_state_loaded"
+    PLAYING:          "level_state_playing"
 
   class exports.LevelFactory
     @build: ->

@@ -57,7 +57,7 @@ __end_loading = (director, images) ->
   )
 
 createCanvas = ->
-  return new CAAT.Director().initialize(1024,1024).setClear( false )
+  return new CAAT.Director().initialize(1000,1000).setClear( false )
 
 __frenetic_init = ->
   # uncomment to avoid decimal point coordinates.

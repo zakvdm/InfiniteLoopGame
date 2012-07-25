@@ -51,13 +51,13 @@ namespace "FNT", (exports) ->
     ###
      # Adds a CAAT.ScaleBehavior to the entity, used on animate in
     ###
-    _animateInUsingScale : (actor, startTime, endTime, startScale, endScale) ->
+    _animateInUsingScale : (actor, startTime, duration, startScale, endScale) ->
       scaleBehavior = new CAAT.ScaleBehavior();
       scaleBehavior.anchor = CAAT.Actor.prototype.ANCHOR_CENTER;
       
       actor.scaleX = actor.scaleY = scaleBehavior.startScaleX = scaleBehavior.startScaleY = startScale;
       scaleBehavior.endScaleX = scaleBehavior.endScaleY = endScale;
-      scaleBehavior.setFrameTime(startTime, startTime + endTime);
+      scaleBehavior.setFrameTime(startTime, duration);
       scaleBehavior.setCycle(false);
       scaleBehavior.setInterpolator(new CAAT.Interpolator().createBounceOutInterpolator(false));
       actor.addBehavior(scaleBehavior);

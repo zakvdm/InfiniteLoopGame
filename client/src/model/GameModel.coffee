@@ -28,3 +28,4 @@ namespace "FNT", (exports) ->
 
     startLevel: ->
       @player.spawn(@currentLevelData.spawnLocation);
+      @level.state.set(FNT.LevelStates.PLAYING)
