@@ -10,6 +10,7 @@ namespace "FNT", (exports) ->
   exports.PlayerStates =
     NORMAL:           "player_state_normal"
     ORBITING:         "player_state_orbiting"
+    DEAD:             "player_state_dead"
     
   class exports.PlayerFactory
     @build: ->

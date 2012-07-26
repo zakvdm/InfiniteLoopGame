@@ -13,7 +13,7 @@ namespace "FNT", (exports) ->
 
       @initPlayerPhysics(@gameModel.player, @gameModel.levelSequence)
       
-      @portal = new FNT.Portal(@_getPortalPosition(), 50, => @onPortalCollision())
+      @portal = new FNT.Portal(@gameModel.levelSequence, @gameModel.player, 50, => @onPortalCollision())
       @physics.behaviours.push(@portal)
       
       @gameModel.addObserver(@)
@@ -28,9 +28,6 @@ namespace "FNT", (exports) ->
       @physics.particles.push(@player)
       
     onPortalCollision: ->
+      @gameModel.player.state.set(FNT.PlayerStates.DEAD)
       @gameModel.nextLevel()
-      @portal.position = @_getPortalPosition()
-      
-    _getPortalPosition: ->
-      return new Vector(@gameModel.levelSequence.currentLevel().exit.x, @gameModel.levelSequence.currentLevel().exit.y)
       

@@ -42,6 +42,9 @@ namespace "FNT", (exports) ->
       switch event.type
         when FNT.PlayerEvents.SPAWN
           @spawn()
+          
+        when FNT.PlayerStates.DEAD
+          @fixed = true
 
     onOrbitStart: (p, ring) ->
       p.playerModel.state.set(FNT.PlayerStates.ORBITING)
@@ -49,6 +52,7 @@ namespace "FNT", (exports) ->
       
 
     spawn: ->
+      @fixed = false
       @moveTo new Vector(@playerModel.position.x, @playerModel.position.y)
       
       @orbiter.setActive(false)

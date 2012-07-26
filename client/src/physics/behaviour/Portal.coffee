@@ -3,13 +3,19 @@
 namespace "FNT", (exports) ->
 
   class exports.Portal extends Behaviour
-    constructor: (@position, @radius, @callback) ->
+    constructor: (@levelSequence, @player, @radius, @callback) ->
       super()
       @_delta = new Vector()
       @
       
     apply: (p, dt, index) ->
-      dist = @_delta.copy(@position).sub(p.pos).mag()
+      if @player.state.get() is FNT.PlayerStates.DEAD then return
+      
+      position = @_getPortalPosition()
+      dist = @_delta.copy(position).sub(p.pos).mag()
       
       if dist < @radius
         @callback()
+        
+    _getPortalPosition: ->
+      return new Vector(@levelSequence.currentLevel().exit.x, @levelSequence.currentLevel().exit.y)

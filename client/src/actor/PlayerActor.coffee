@@ -41,11 +41,6 @@ namespace "FNT", (exports) ->
           @spawn()
         when FNT.PlayerEvents.NEW_POSITION
           @setPosition(@playerModel.position)
-        when FNT.STATE_CHANGE_EVENT, event.source is @playerModel
-          @handleStateChange(event.data)
-   
-    handleStateChange: (newState) ->
-      switch newState
         when FNT.PlayerStates.NORMAL
           @setFillStyle(@playerModel.COLOR)
         when FNT.PlayerStates.ORBITING

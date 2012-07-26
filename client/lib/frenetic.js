@@ -203,7 +203,8 @@
     };
     exports.PlayerStates = {
       NORMAL: "player_state_normal",
-      ORBITING: "player_state_orbiting"
+      ORBITING: "player_state_orbiting",
+      DEAD: "player_state_dead"
     };
     exports.PlayerFactory = (function() {
 
@@ -470,7 +471,6 @@
   });
 
   namespace("FNT", function(exports) {
-    exports.STATE_CHANGE_EVENT = "state_change";
     return exports.StateMachine = (function(_super) {
 
       __extends(StateMachine, _super);
@@ -483,12 +483,18 @@
 
       }
 
+      StateMachine.prototype.get = function() {
+        return this.state;
+      };
+
       StateMachine.prototype.set = function(newState) {
+        var oldState;
         if (newState === this.state) {
           return;
         }
+        oldState = newState;
         this.state = newState;
-        return this.entity.notifyObservers(FNT.STATE_CHANGE_EVENT, this.state);
+        return this.entity.notifyObservers(this.state, oldState);
       };
 
       return StateMachine;
@@ -566,14 +572,6 @@
             return this.spawn();
           case FNT.PlayerEvents.NEW_POSITION:
             return this.setPosition(this.playerModel.position);
-          case FNT.STATE_CHANGE_EVENT:
-          case event.source === this.playerModel:
-            return this.handleStateChange(event.data);
-        }
-      };
-
-      PlayerActor.prototype.handleStateChange = function(newState) {
-        switch (newState) {
           case FNT.PlayerStates.NORMAL:
             return this.setFillStyle(this.playerModel.COLOR);
           case FNT.PlayerStates.ORBITING:
@@ -1356,8 +1354,9 @@
 
       __extends(Portal, _super);
 
-      function Portal(position, radius, callback) {
-        this.position = position;
+      function Portal(levelSequence, player, radius, callback) {
+        this.levelSequence = levelSequence;
+        this.player = player;
         this.radius = radius;
         this.callback = callback;
         Portal.__super__.constructor.call(this);
@@ -1367,11 +1366,19 @@
       }
 
       Portal.prototype.apply = function(p, dt, index) {
-        var dist;
-        dist = this._delta.copy(this.position).sub(p.pos).mag();
+        var dist, position;
+        if (this.player.state.get() === FNT.PlayerStates.DEAD) {
+          return;
+        }
+        position = this._getPortalPosition();
+        dist = this._delta.copy(position).sub(p.pos).mag();
         if (dist < this.radius) {
           return this.callback();
         }
+      };
+
+      Portal.prototype._getPortalPosition = function() {
+        return new Vector(this.levelSequence.currentLevel().exit.x, this.levelSequence.currentLevel().exit.y);
       };
 
       return Portal;
@@ -1433,6 +1440,8 @@
         switch (event.type) {
           case FNT.PlayerEvents.SPAWN:
             return this.spawn();
+          case FNT.PlayerStates.DEAD:
+            return this.fixed = true;
         }
       };
 
@@ -1442,6 +1451,7 @@
       };
 
       PlayerParticle.prototype.spawn = function() {
+        this.fixed = false;
         this.moveTo(new Vector(this.playerModel.position.x, this.playerModel.position.y));
         this.orbiter.setActive(false);
         return this.levelCollision.setActive(true);
@@ -1469,7 +1479,7 @@
         this.gravity = new ConstantForce(FNT.PhysicsConstants.GRAVITY);
         this.physics.behaviours.push(this.gravity);
         this.initPlayerPhysics(this.gameModel.player, this.gameModel.levelSequence);
-        this.portal = new FNT.Portal(this._getPortalPosition(), 50, function() {
+        this.portal = new FNT.Portal(this.gameModel.levelSequence, this.gameModel.player, 50, function() {
           return _this.onPortalCollision();
         });
         this.physics.behaviours.push(this.portal);
@@ -1487,12 +1497,8 @@
       };
 
       PhysicsController.prototype.onPortalCollision = function() {
-        this.gameModel.nextLevel();
-        return this.portal.position = this._getPortalPosition();
-      };
-
-      PhysicsController.prototype._getPortalPosition = function() {
-        return new Vector(this.gameModel.levelSequence.currentLevel().exit.x, this.gameModel.levelSequence.currentLevel().exit.y);
+        this.gameModel.player.state.set(FNT.PlayerStates.DEAD);
+        return this.gameModel.nextLevel();
       };
 
       return PhysicsController;
