@@ -547,6 +547,10 @@
 
       }
 
+      PlayerActor.prototype.ONE_SECOND = 1000;
+
+      PlayerActor.prototype.HALF_SECOND = 500;
+
       PlayerActor.prototype.create = function(scene, playerModel) {
         this.playerModel = playerModel;
         this.setVisible(false);
@@ -555,15 +559,16 @@
         this.setLineWidth(2);
         this.setStrokeStyle('#0');
         this.setFillStyle(this.playerModel.COLOR);
-        this.prepareSpawnBehavior();
+        this.prepareBehaviors();
         this.playerModel.addObserver(this);
         scene.addChild(this);
         return this;
       };
 
-      PlayerActor.prototype.prepareSpawnBehavior = function() {
-        this.spawnScaleBehavior = new CAAT.ScaleBehavior().setPingPong().setValues(1, 1.3, 1, 1.3, .50, .50).setDelayTime(0, 1000);
-        return this.spawnAlphaBehavior = new CAAT.AlphaBehavior().setValues(0, 1).setDelayTime(0, 1000);
+      PlayerActor.prototype.prepareBehaviors = function() {
+        this.spawnScaleBehavior = new CAAT.ScaleBehavior().setPingPong().setValues(1, 1.3, 1, 1.3, .50, .50);
+        this.spawnAlphaBehavior = new CAAT.AlphaBehavior().setValues(0, 1);
+        return this.deathBehavior = new CAAT.ScaleBehavior().setValues(1, 0, 1, 0, .5, .5);
       };
 
       PlayerActor.prototype.handleEvent = function(event) {
@@ -576,14 +581,24 @@
             return this.setFillStyle(this.playerModel.COLOR);
           case FNT.PlayerStates.ORBITING:
             return this.setFillStyle(this.playerModel.ORBITING_COLOR);
+          case FNT.PlayerStates.DEAD:
+            return this.kill();
         }
       };
 
       PlayerActor.prototype.spawn = function() {
         this.setPosition(this.playerModel.position);
+        this.emptyBehaviorList();
+        this.spawnScaleBehavior.setDelayTime(0, this.ONE_SECOND);
+        this.spawnAlphaBehavior.setDelayTime(0, this.ONE_SECOND);
         this.addBehavior(this.spawnScaleBehavior);
         this.addBehavior(this.spawnAlphaBehavior);
         return this.setVisible(true);
+      };
+
+      PlayerActor.prototype.kill = function() {
+        this.deathBehavior.setDelayTime(0, this.HALF_SECOND);
+        return this.addBehavior(this.deathBehavior);
       };
 
       return PlayerActor;
