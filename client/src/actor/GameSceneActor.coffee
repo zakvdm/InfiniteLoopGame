@@ -39,7 +39,6 @@ namespace "FNT", (exports) ->
     createLevelContainer : (levelSequence) ->
       @levelActorContainer = new FNT.LevelActorContainer().
                             create(@directorScene, levelSequence).
-                            setSize(@director.width, @director.height).
                             setLocation(0, 0)
                             
     createPlayer : (player) ->

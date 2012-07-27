@@ -9,6 +9,9 @@ config =
 target = 'frenetic'
 files = [
         'base'
+        'Time'
+        'Game'
+        
         # MODELS:
         'model/ObservableModel'
         'model/GameModes'
@@ -26,7 +29,8 @@ files = [
         'actor/PlayerActor'
         'actor/RingActor'
         'actor/PortalBorderActor'
-        'actor/LevelActorContainer'
+        'actor/LevelActor'
+        'actor/LevelSequenceActor'
         'actor/BackgroundContainer'
         'actor/GameSceneActor'
         

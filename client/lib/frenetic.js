@@ -20,6 +20,34 @@
   };
 
   namespace("FNT", function(exports) {
+    return exports.Time = (function() {
+
+      function Time() {}
+
+      Time.ONE_SECOND = 1000;
+
+      Time.TWO_SECONDS = 2000;
+
+      return Time;
+
+    })();
+  });
+
+  namespace("FNT", function(exports) {
+    return exports.Game = (function() {
+
+      function Game() {}
+
+      Game.WIDTH = 1000;
+
+      Game.HEIGHT = 1000;
+
+      return Game;
+
+    })();
+  });
+
+  namespace("FNT", function(exports) {
     return exports.ObservableModel = (function() {
 
       function ObservableModel() {
@@ -73,6 +101,74 @@
         levelData: [
           {
             spawnLocation: {
+              x: 500,
+              y: 500
+            },
+            exit: {
+              x: 300,
+              y: 800
+            },
+            ringData: [
+              {
+                x: 500,
+                y: 500,
+                diameter: 1000
+              }
+            ]
+          }, {
+            spawnLocation: {
+              x: 512,
+              y: 800
+            },
+            exit: {
+              x: 300,
+              y: 300
+            },
+            ringData: [
+              {
+                x: 500,
+                y: 500,
+                diameter: 1000
+              }, {
+                x: 500,
+                y: 500,
+                diameter: 300
+              }, {
+                x: 150,
+                y: 150,
+                diameter: 100
+              }
+            ]
+          }, {
+            spawnLocation: {
+              x: 80,
+              y: 200
+            },
+            exit: {
+              x: 200,
+              y: 100
+            },
+            ringData: [
+              {
+                x: 100,
+                y: 800,
+                diameter: 150
+              }, {
+                x: 550,
+                y: 750,
+                diameter: 150
+              }, {
+                x: 900,
+                y: 600,
+                diameter: 150
+              }, {
+                x: 600,
+                y: 300,
+                diameter: 150
+              }
+            ]
+          }, {
+            spawnLocation: {
               x: 312,
               y: 200
             },
@@ -113,58 +209,6 @@
                 x: 800,
                 y: 300,
                 diameter: 250
-              }
-            ]
-          }, {
-            spawnLocation: {
-              x: 512,
-              y: 800
-            },
-            exit: {
-              x: 300,
-              y: 300
-            },
-            ringData: [
-              {
-                x: 500,
-                y: 500,
-                diameter: 1000
-              }, {
-                x: 500,
-                y: 500,
-                diameter: 300
-              }, {
-                x: 100,
-                y: 100,
-                diameter: 100
-              }
-            ]
-          }, {
-            spawnLocation: {
-              x: 80,
-              y: 200
-            },
-            exit: {
-              x: 200,
-              y: 100
-            },
-            ringData: [
-              {
-                x: 100,
-                y: 800,
-                diameter: 150
-              }, {
-                x: 550,
-                y: 750,
-                diameter: 150
-              }, {
-                x: 900,
-                y: 600,
-                diameter: 150
-              }, {
-                x: 600,
-                y: 300,
-                diameter: 150
               }
             ]
           }, {
@@ -410,14 +454,16 @@
       };
 
       LevelSequence.prototype.nextLevel = function() {
-        return this._levels[this._currentIndex + 1];
+        return this._levels[this._nextIndex()];
       };
 
       LevelSequence.prototype.advance = function() {
-        if (this._currentIndex < (this._levels.length - 2)) {
-          this._currentIndex += 1;
-        }
+        this._currentIndex = this._nextIndex();
         return this.state.set(FNT.LevelSequenceStates.PREPARING);
+      };
+
+      LevelSequence.prototype._nextIndex = function() {
+        return (this._currentIndex + 1) % this._levels.length;
       };
 
       return LevelSequence;
@@ -547,10 +593,6 @@
 
       }
 
-      PlayerActor.prototype.ONE_SECOND = 1000;
-
-      PlayerActor.prototype.HALF_SECOND = 500;
-
       PlayerActor.prototype.create = function(scene, playerModel) {
         this.playerModel = playerModel;
         this.setVisible(false);
@@ -589,15 +631,15 @@
       PlayerActor.prototype.spawn = function() {
         this.setPosition(this.playerModel.position);
         this.emptyBehaviorList();
-        this.spawnScaleBehavior.setDelayTime(0, this.ONE_SECOND);
-        this.spawnAlphaBehavior.setDelayTime(0, this.ONE_SECOND);
+        this.spawnScaleBehavior.setDelayTime(0, FNT.Time.ONE_SECOND);
+        this.spawnAlphaBehavior.setDelayTime(0, FNT.Time.ONE_SECOND);
         this.addBehavior(this.spawnScaleBehavior);
         this.addBehavior(this.spawnAlphaBehavior);
         return this.setVisible(true);
       };
 
       PlayerActor.prototype.kill = function() {
-        this.deathBehavior.setDelayTime(0, this.HALF_SECOND);
+        this.deathBehavior.setDelayTime(0, FNT.Time.ONE_SECOND);
         return this.addBehavior(this.deathBehavior);
       };
 
@@ -678,7 +720,7 @@
   });
 
   namespace("FNT", function(exports) {
-    exports.NextLevelPortal = (function(_super) {
+    return exports.NextLevelPortal = (function(_super) {
 
       __extends(NextLevelPortal, _super);
 
@@ -686,27 +728,62 @@
 
       function NextLevelPortal() {
         NextLevelPortal.__super__.constructor.call(this);
+        this.setSize(FNT.Game.WIDTH, FNT.Game.HEIGHT);
         this.ringActors = [];
+        this._prepareBehaviors();
         this;
 
       }
 
-      NextLevelPortal.prototype.prepare = function(levelModel, width, height) {
+      NextLevelPortal.prototype.prepare = function(levelModel, position) {
         var ringModel, _i, _len, _ref;
         this.levelModel = levelModel;
-        this.setSize(width, height);
-        this._createBorder(width);
+        this.emptyBehaviorList();
+        this._createBorder();
         _ref = this.levelModel.getRings();
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           ringModel = _ref[_i];
           this._create(ringModel);
         }
         this.setScale(FNT.NextLevelPortal.SCALE, FNT.NextLevelPortal.SCALE);
+        this.centerAt(position.x, position.y);
         return this;
       };
 
-      NextLevelPortal.prototype._createBorder = function(sceneWidth) {
-        var diameter, position, r;
+      NextLevelPortal.prototype.zoomIn = function(startTime, callback) {
+        var interpolator, path, pathBehavior, scaleBehavior,
+          _this = this;
+        this._removeBorder();
+        interpolator = new CAAT.Interpolator().createExponentialInInterpolator(4, false);
+        scaleBehavior = new CAAT.ScaleBehavior();
+        scaleBehavior.anchor = CAAT.Actor.prototype.ANCHOR_CENTER;
+        scaleBehavior.startScaleX = scaleBehavior.startScaleY = FNT.NextLevelPortal.SCALE;
+        scaleBehavior.endScaleX = scaleBehavior.endScaleY = 1;
+        scaleBehavior.setFrameTime(startTime, FNT.Time.TWO_SECONDS);
+        scaleBehavior.setInterpolator(interpolator);
+        if (callback != null) {
+          scaleBehavior.addListener({
+            behaviorExpired: function(behavior, time, actor) {
+              return callback();
+            }
+          });
+        }
+        this.addBehavior(scaleBehavior);
+        path = new CAAT.LinearPath().setInitialPosition(this.x, this.y).setFinalPosition(0, 0);
+        pathBehavior = new CAAT.PathBehavior().setPath(path).setFrameTime(startTime, FNT.Time.TWO_SECONDS).setInterpolator(interpolator);
+        this.addBehavior(pathBehavior);
+        this;
+
+        return this.scaleBehavior;
+      };
+
+      NextLevelPortal.prototype._prepareBehaviors = function() {
+        return this.fadeOut = new CAAT.AlphaBehavior().setValues(1, 0);
+      };
+
+      NextLevelPortal.prototype._createBorder = function() {
+        var diameter, position, r, sceneWidth;
+        sceneWidth = FNT.Game.WIDTH;
         r = sceneWidth / 2;
         position = {
           x: r,
@@ -715,6 +792,10 @@
         diameter = Math.sqrt(2 * sceneWidth * sceneWidth);
         this.borderActor = new FNT.PortalBorderActor().create(diameter, position);
         return this.addChild(this.borderActor);
+      };
+
+      NextLevelPortal.prototype._removeBorder = function() {
+        return this.borderActor.addBehavior(this.fadeOut.setDelayTime(0, FNT.Time.ONE_SECOND));
       };
 
       NextLevelPortal.prototype._create = function(ringModel) {
@@ -727,12 +808,16 @@
       return NextLevelPortal;
 
     })(CAAT.ActorContainer);
+  });
+
+  namespace("FNT", function(exports) {
     return exports.LevelActorContainer = (function(_super) {
 
       __extends(LevelActorContainer, _super);
 
       function LevelActorContainer() {
         LevelActorContainer.__super__.constructor.call(this);
+        this.setSize(FNT.Game.WIDTH, FNT.Game.HEIGHT);
         this.ringActors = [];
         this;
 
@@ -741,40 +826,69 @@
       LevelActorContainer.prototype.create = function(scene, levelSequence) {
         this.scene = scene;
         this.levelSequence = levelSequence;
-        this.levelSequence.addObserver(this);
         this.scene.addChild(this);
+        this.levelSequence.addObserver(this);
+        this._prepareNextLevel(this.levelSequence.currentLevel(), new CAAT.Point(500, 500));
         return this;
       };
 
       LevelActorContainer.prototype.handleEvent = function(event) {
         switch (event.data) {
           case FNT.LevelSequenceStates.PREPARING:
-            return this.drawLevel();
+            return this.prepareLevel();
         }
       };
 
-      LevelActorContainer.prototype.drawLevel = function() {
-        var exitLocation, ringActor, ringModel, _i, _j, _len, _len1, _ref, _ref1;
-        this._clearCurrentLevel();
-        _ref = this.levelSequence.currentLevel().getRings();
-        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-          ringModel = _ref[_i];
-          this._create(ringModel);
-        }
-        _ref1 = this.ringActors;
-        for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
-          ringActor = _ref1[_j];
-          this._animate(ringActor);
-        }
+      LevelActorContainer.prototype.prepareLevel = function() {
+        var exitLocation, ringActor, ringModel, _i, _j, _len, _len1, _ref, _ref1,
+          _this = this;
+        this._cleanUpLevel(this.activeLevelActor);
         if (this.nextLevelPortal != null) {
-          this.removeChild(this.nextLevelPortal);
-          this.nextLevelPortal.setDiscardable(true).setExpired(true);
+          this.nextLevelPortal.zoomIn(this.scene.time, function() {
+            return _this._doneZooming();
+          });
+          this.activeLevelActor = this.nextLevelPortal;
+        } else {
+          alert("IN ELSE!");
+          _ref = this.levelSequence.currentLevel().getRings();
+          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+            ringModel = _ref[_i];
+            this._create(ringModel);
+          }
+          _ref1 = this.ringActors;
+          for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+            ringActor = _ref1[_j];
+            this._animate(ringActor);
+          }
+          this.nextLevelPortal = new FNT.NextLevelPortal().prepare(this.levelSequence.nextLevel());
+          exitLocation = this.levelSequence.currentLevel().exit;
+          this.nextLevelPortal.centerAt(exitLocation.x, exitLocation.y);
+          this.addChild(this.nextLevelPortal);
         }
-        this.nextLevelPortal = new FNT.NextLevelPortal().prepare(this.levelSequence.nextLevel(), this.width, this.height);
-        exitLocation = this.levelSequence.currentLevel().exit;
-        this.nextLevelPortal.centerAt(exitLocation.x, exitLocation.y);
-        this.addChild(this.nextLevelPortal);
         return this;
+      };
+
+      LevelActorContainer.prototype._doneZooming = function() {
+        this._prepareNextLevel(this.levelSequence.nextLevel(), this.levelSequence.currentLevel().exit);
+        return this._donePreparing();
+      };
+
+      LevelActorContainer.prototype._cleanUpLevel = function(levelActor) {
+        var ring, _i, _len, _ref;
+        if (levelActor != null) {
+          _ref = levelActor.ringActors;
+          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+            ring = _ref[_i];
+            ring.setDiscardable(true).setExpired(true);
+          }
+          return this.removeChild(levelActor);
+        }
+      };
+
+      LevelActorContainer.prototype._prepareNextLevel = function(level, position) {
+        this.nextLevelPortal = new FNT.NextLevelPortal();
+        this.nextLevelPortal.prepare(level, position);
+        return this.addChild(this.nextLevelPortal);
       };
 
       LevelActorContainer.prototype._clearCurrentLevel = function() {
@@ -825,13 +939,13 @@
         this.scaleBehavior.setInterpolator(new CAAT.Interpolator().createBounceOutInterpolator(false));
         this.scaleBehavior.addListener({
           behaviorExpired: function(behavior, time, actor) {
-            return _this._doneAnimating();
+            return _this._donePreparing();
           }
         });
         return this.scaleBehavior;
       };
 
-      LevelActorContainer.prototype._doneAnimating = function() {
+      LevelActorContainer.prototype._donePreparing = function() {
         return this.levelSequence.state.set(FNT.LevelSequenceStates.READY);
       };
 
@@ -917,7 +1031,7 @@
       };
 
       GameSceneActor.prototype.createLevelContainer = function(levelSequence) {
-        return this.levelActorContainer = new FNT.LevelActorContainer().create(this.directorScene, levelSequence).setSize(this.director.width, this.director.height).setLocation(0, 0);
+        return this.levelActorContainer = new FNT.LevelActorContainer().create(this.directorScene, levelSequence).setLocation(0, 0);
       };
 
       GameSceneActor.prototype.createPlayer = function(player) {
@@ -1573,7 +1687,7 @@
     scene = director.createScene();
     scene.addChild(new CAAT.Actor().setBackgroundImage(director.getImage('splash')));
     scene.addChild(ladingActor = new CAAT.Actor().setBackgroundImage(ladingImg).setLocation(director.width - ladingImg.width - 10, director.height - ladingImg.height - 30));
-    scene.addChild(oActor = new CAAT.Actor().setBackgroundImage(oImg).setLocation(ladingActor.x + 20, ladingActor.y + 10).addBehavior(new CAAT.RotateBehavior().setValues(0, 2 * Math.PI).setFrameTime(0, 1000).setCycle(true)));
+    scene.addChild(oActor = new CAAT.Actor().setBackgroundImage(oImg).setLocation(ladingActor.x + 20, ladingActor.y + 10).addBehavior(new CAAT.RotateBehavior().setValues(0, 2 * Math.PI).setFrameTime(0, FNT.Time.ONE_SECOND).setCycle(true)));
     scene.loadedImage = function(count, images) {
       if (count === images.length) {
         return __end_loading(director, images);
@@ -1591,7 +1705,7 @@
   };
 
   createCanvas = function() {
-    return new CAAT.Director().initialize(1000, 1000).setClear(false);
+    return new CAAT.Director().initialize(FNT.Game.WIDTH, FNT.Game.HEIGHT).setClear(false);
   };
 
   __frenetic_init = function() {

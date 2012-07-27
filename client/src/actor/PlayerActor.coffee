@@ -7,9 +7,6 @@ namespace "FNT", (exports) ->
       super()
       @ # return this
     
-    ONE_SECOND:   1000
-    HALF_SECOND:  500
-      
     create: (scene, @playerModel) ->
       @setVisible(false)
       
@@ -57,15 +54,15 @@ namespace "FNT", (exports) ->
       @setPosition(@playerModel.position)
       
       @emptyBehaviorList()
-      @spawnScaleBehavior.setDelayTime(0, @ONE_SECOND)
-      @spawnAlphaBehavior.setDelayTime(0, @ONE_SECOND)
+      @spawnScaleBehavior.setDelayTime(0, FNT.Time.ONE_SECOND)
+      @spawnAlphaBehavior.setDelayTime(0, FNT.Time.ONE_SECOND)
       @addBehavior(@spawnScaleBehavior)
       @addBehavior(@spawnAlphaBehavior)
       
       @setVisible(true) 
     
     kill: ->
-      @deathBehavior.setDelayTime(0, @HALF_SECOND)
+      @deathBehavior.setDelayTime(0, FNT.Time.ONE_SECOND)
       @addBehavior(@deathBehavior)
       
         

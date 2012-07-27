@@ -30,7 +30,7 @@ __FNT__createLoadingScene = (director) ->
       addBehavior(
         new CAAT.RotateBehavior().
           setValues(0,2*Math.PI).
-          setFrameTime(0,1000).
+          setFrameTime(0, FNT.Time.ONE_SECOND).
           setCycle(true)
         )
   )
@@ -57,7 +57,7 @@ __end_loading = (director, images) ->
   )
 
 createCanvas = ->
-  return new CAAT.Director().initialize(1000,1000).setClear( false )
+  return new CAAT.Director().initialize(FNT.Game.WIDTH, FNT.Game.HEIGHT).setClear( false )
 
 __frenetic_init = ->
   # uncomment to avoid decimal point coordinates.
