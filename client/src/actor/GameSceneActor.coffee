@@ -37,7 +37,7 @@ namespace "FNT", (exports) ->
       @
   
     createLevelContainer : (levelSequence) ->
-      @levelActorContainer = new FNT.LevelActorContainer().
+      @levelSequenceActor = new FNT.LevelSequenceActor().
                             create(@directorScene, levelSequence).
                             setLocation(0, 0)
                             

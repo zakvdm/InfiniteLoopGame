@@ -1,9 +1,9 @@
 
 namespace "FNT", (exports) ->
 
-  class exports.NextLevelPortal extends CAAT.ActorContainer
+  class exports.LevelActor extends CAAT.ActorContainer
   
-    @SCALE:   0.05  # 0.05 * 1000 (pixels) gives us a diameter of 50
+    @PORTAL_SCALE:   0.05  # 0.05 * 1000 (pixels) gives us a diameter of 50
     
     constructor: ->
       super()
@@ -19,41 +19,16 @@ namespace "FNT", (exports) ->
       @_createBorder()
       @_create(ringModel) for ringModel in @levelModel.getRings() # Create all the RingActors
       
-      @setScale(FNT.NextLevelPortal.SCALE, FNT.NextLevelPortal.SCALE)
+      @setScale(FNT.LevelActor.PORTAL_SCALE, FNT.LevelActor.PORTAL_SCALE)
       
       @centerAt(position.x, position.y)
       
       @
-      
-    zoomIn: (startTime, callback) ->
-      @_removeBorder()
-      
-      interpolator = new CAAT.Interpolator().createExponentialInInterpolator(4, false)
-      
-      scaleBehavior = new CAAT.ScaleBehavior()
-      scaleBehavior.anchor = CAAT.Actor.prototype.ANCHOR_CENTER
-      
-      scaleBehavior.startScaleX = scaleBehavior.startScaleY = FNT.NextLevelPortal.SCALE
-      scaleBehavior.endScaleX = scaleBehavior.endScaleY = 1
-      scaleBehavior.setFrameTime(startTime, FNT.Time.TWO_SECONDS)
-      scaleBehavior.setInterpolator(interpolator)
-      if callback? then scaleBehavior.addListener({ behaviorExpired : (behavior, time, actor) => callback()})
-      
-      @addBehavior(scaleBehavior)
-      
-      path = new CAAT.LinearPath().
-        setInitialPosition(@x, @y).
-        setFinalPosition(0, 0);
-      pathBehavior= new CAAT.PathBehavior().
-          setPath(path).
-          setFrameTime(startTime, FNT.Time.TWO_SECONDS).
-          setInterpolator(interpolator)
-          
-      @addBehavior(pathBehavior)
-      
-      @
-      
-      return @scaleBehavior
+
+    discard: ->
+      ring.setDiscardable(true).setExpired(true) for ring in @ringActors
+      @borderActor.setDiscardable(true).setExpired(true)
+      @setDiscardable(true).setExpired(true)
       
     _prepareBehaviors: ->
       @fadeOut = new CAAT.AlphaBehavior().setValues(1, 0)
@@ -66,9 +41,8 @@ namespace "FNT", (exports) ->
       @borderActor = new FNT.PortalBorderActor().create(diameter, position)
       @addChild(@borderActor)
       
-    _removeBorder: ->
+    removeBorder: ->
       @borderActor.addBehavior(@fadeOut.setDelayTime(0, FNT.Time.ONE_SECOND))
-      
      
     _create: (ringModel) ->
       ringActor = new FNT.RingActor().create(ringModel, 0.8)

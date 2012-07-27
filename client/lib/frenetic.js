@@ -211,22 +211,6 @@
                 diameter: 250
               }
             ]
-          }, {
-            spawnLocation: {
-              x: 512,
-              y: 800
-            },
-            exit: {
-              x: 300,
-              y: 300
-            },
-            ringData: [
-              {
-                x: 500,
-                y: 500,
-                diameter: 1000
-              }
-            ]
           }
         ]
       },
@@ -720,14 +704,14 @@
   });
 
   namespace("FNT", function(exports) {
-    return exports.NextLevelPortal = (function(_super) {
+    return exports.LevelActor = (function(_super) {
 
-      __extends(NextLevelPortal, _super);
+      __extends(LevelActor, _super);
 
-      NextLevelPortal.SCALE = 0.05;
+      LevelActor.PORTAL_SCALE = 0.05;
 
-      function NextLevelPortal() {
-        NextLevelPortal.__super__.constructor.call(this);
+      function LevelActor() {
+        LevelActor.__super__.constructor.call(this);
         this.setSize(FNT.Game.WIDTH, FNT.Game.HEIGHT);
         this.ringActors = [];
         this._prepareBehaviors();
@@ -735,7 +719,7 @@
 
       }
 
-      NextLevelPortal.prototype.prepare = function(levelModel, position) {
+      LevelActor.prototype.prepare = function(levelModel, position) {
         var ringModel, _i, _len, _ref;
         this.levelModel = levelModel;
         this.emptyBehaviorList();
@@ -745,43 +729,27 @@
           ringModel = _ref[_i];
           this._create(ringModel);
         }
-        this.setScale(FNT.NextLevelPortal.SCALE, FNT.NextLevelPortal.SCALE);
+        this.setScale(FNT.LevelActor.PORTAL_SCALE, FNT.LevelActor.PORTAL_SCALE);
         this.centerAt(position.x, position.y);
         return this;
       };
 
-      NextLevelPortal.prototype.zoomIn = function(startTime, callback) {
-        var interpolator, path, pathBehavior, scaleBehavior,
-          _this = this;
-        this._removeBorder();
-        interpolator = new CAAT.Interpolator().createExponentialInInterpolator(4, false);
-        scaleBehavior = new CAAT.ScaleBehavior();
-        scaleBehavior.anchor = CAAT.Actor.prototype.ANCHOR_CENTER;
-        scaleBehavior.startScaleX = scaleBehavior.startScaleY = FNT.NextLevelPortal.SCALE;
-        scaleBehavior.endScaleX = scaleBehavior.endScaleY = 1;
-        scaleBehavior.setFrameTime(startTime, FNT.Time.TWO_SECONDS);
-        scaleBehavior.setInterpolator(interpolator);
-        if (callback != null) {
-          scaleBehavior.addListener({
-            behaviorExpired: function(behavior, time, actor) {
-              return callback();
-            }
-          });
+      LevelActor.prototype.discard = function() {
+        var ring, _i, _len, _ref;
+        _ref = this.ringActors;
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          ring = _ref[_i];
+          ring.setDiscardable(true).setExpired(true);
         }
-        this.addBehavior(scaleBehavior);
-        path = new CAAT.LinearPath().setInitialPosition(this.x, this.y).setFinalPosition(0, 0);
-        pathBehavior = new CAAT.PathBehavior().setPath(path).setFrameTime(startTime, FNT.Time.TWO_SECONDS).setInterpolator(interpolator);
-        this.addBehavior(pathBehavior);
-        this;
-
-        return this.scaleBehavior;
+        this.borderActor.setDiscardable(true).setExpired(true);
+        return this.setDiscardable(true).setExpired(true);
       };
 
-      NextLevelPortal.prototype._prepareBehaviors = function() {
+      LevelActor.prototype._prepareBehaviors = function() {
         return this.fadeOut = new CAAT.AlphaBehavior().setValues(1, 0);
       };
 
-      NextLevelPortal.prototype._createBorder = function() {
+      LevelActor.prototype._createBorder = function() {
         var diameter, position, r, sceneWidth;
         sceneWidth = FNT.Game.WIDTH;
         r = sceneWidth / 2;
@@ -794,162 +762,111 @@
         return this.addChild(this.borderActor);
       };
 
-      NextLevelPortal.prototype._removeBorder = function() {
+      LevelActor.prototype.removeBorder = function() {
         return this.borderActor.addBehavior(this.fadeOut.setDelayTime(0, FNT.Time.ONE_SECOND));
       };
 
-      NextLevelPortal.prototype._create = function(ringModel) {
+      LevelActor.prototype._create = function(ringModel) {
         var ringActor;
         ringActor = new FNT.RingActor().create(ringModel, 0.8);
         this.ringActors.push(ringActor);
         return this.addChild(ringActor);
       };
 
-      return NextLevelPortal;
+      return LevelActor;
 
     })(CAAT.ActorContainer);
   });
 
   namespace("FNT", function(exports) {
-    return exports.LevelActorContainer = (function(_super) {
+    return exports.LevelSequenceActor = (function(_super) {
 
-      __extends(LevelActorContainer, _super);
+      __extends(LevelSequenceActor, _super);
 
-      function LevelActorContainer() {
-        LevelActorContainer.__super__.constructor.call(this);
+      function LevelSequenceActor() {
+        LevelSequenceActor.__super__.constructor.call(this);
         this.setSize(FNT.Game.WIDTH, FNT.Game.HEIGHT);
         this.ringActors = [];
         this;
 
       }
 
-      LevelActorContainer.prototype.create = function(scene, levelSequence) {
+      LevelSequenceActor.prototype.create = function(scene, levelSequence) {
         this.scene = scene;
         this.levelSequence = levelSequence;
         this.scene.addChild(this);
         this.levelSequence.addObserver(this);
-        this._prepareNextLevel(this.levelSequence.currentLevel(), new CAAT.Point(500, 500));
+        this._prepareNextLevel(this.levelSequence.currentLevel(), new CAAT.Point(FNT.Game.WIDTH / 2, FNT.Game.HEIGHT / 2));
+        this.zoom = this._prepareZoom();
         return this;
       };
 
-      LevelActorContainer.prototype.handleEvent = function(event) {
+      LevelSequenceActor.prototype.handleEvent = function(event) {
         switch (event.data) {
           case FNT.LevelSequenceStates.PREPARING:
             return this.prepareLevel();
         }
       };
 
-      LevelActorContainer.prototype.prepareLevel = function() {
-        var exitLocation, ringActor, ringModel, _i, _j, _len, _len1, _ref, _ref1,
-          _this = this;
-        this._cleanUpLevel(this.activeLevelActor);
-        if (this.nextLevelPortal != null) {
-          this.nextLevelPortal.zoomIn(this.scene.time, function() {
-            return _this._doneZooming();
-          });
-          this.activeLevelActor = this.nextLevelPortal;
-        } else {
-          alert("IN ELSE!");
-          _ref = this.levelSequence.currentLevel().getRings();
-          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-            ringModel = _ref[_i];
-            this._create(ringModel);
-          }
-          _ref1 = this.ringActors;
-          for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
-            ringActor = _ref1[_j];
-            this._animate(ringActor);
-          }
-          this.nextLevelPortal = new FNT.NextLevelPortal().prepare(this.levelSequence.nextLevel());
-          exitLocation = this.levelSequence.currentLevel().exit;
-          this.nextLevelPortal.centerAt(exitLocation.x, exitLocation.y);
-          this.addChild(this.nextLevelPortal);
-        }
+      LevelSequenceActor.prototype.prepareLevel = function() {
+        var _this = this;
+        this._cleanUpLevel();
+        this._zoomIn(this.nextLevelActor, this.scene.time, function() {
+          return _this._doneZooming();
+        });
+        this.activeLevelActor = this.nextLevelActor;
         return this;
       };
 
-      LevelActorContainer.prototype._doneZooming = function() {
+      LevelSequenceActor.prototype._cleanUpLevel = function() {
+        if (this.activeLevelActor != null) {
+          this.activeLevelActor.discard();
+          return this.removeChild(this.activeLevelActor);
+        }
+      };
+
+      LevelSequenceActor.prototype._doneZooming = function() {
         this._prepareNextLevel(this.levelSequence.nextLevel(), this.levelSequence.currentLevel().exit);
-        return this._donePreparing();
-      };
-
-      LevelActorContainer.prototype._cleanUpLevel = function(levelActor) {
-        var ring, _i, _len, _ref;
-        if (levelActor != null) {
-          _ref = levelActor.ringActors;
-          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-            ring = _ref[_i];
-            ring.setDiscardable(true).setExpired(true);
-          }
-          return this.removeChild(levelActor);
-        }
-      };
-
-      LevelActorContainer.prototype._prepareNextLevel = function(level, position) {
-        this.nextLevelPortal = new FNT.NextLevelPortal();
-        this.nextLevelPortal.prepare(level, position);
-        return this.addChild(this.nextLevelPortal);
-      };
-
-      LevelActorContainer.prototype._clearCurrentLevel = function() {
-        var ring, _i, _len, _ref;
-        _ref = this.ringActors;
-        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-          ring = _ref[_i];
-          ring.setDiscardable(true).setExpired(true);
-        }
-        return this.ringActors = [];
-      };
-
-      LevelActorContainer.prototype._create = function(ringModel) {
-        var ringActor;
-        ringActor = new FNT.RingActor().create(ringModel);
-        ringActor.setVisible(false);
-        this.ringActors.push(ringActor);
-        return this.addChild(ringActor);
-      };
-
-      LevelActorContainer.prototype._animate = function(ringActor) {
-        this._animateInUsingScale(ringActor, this.scene.time, 1000);
-        return ringActor.setVisible(true);
-      };
-
-      /*
-           # Adds a CAAT.ScaleBehavior to the entity, used on animate in
-      */
-
-
-      LevelActorContainer.prototype._animateInUsingScale = function(actor, startTime, duration) {
-        var _ref;
-        if ((_ref = this.scaleBehavior) == null) {
-          this.scaleBehavior = this._createScaleBehavior();
-        }
-        actor.scaleX = actor.scaleY = this.scaleBehavior.startScaleX;
-        this.scaleBehavior.setFrameTime(startTime, duration);
-        return actor.addBehavior(this.scaleBehavior);
-      };
-
-      LevelActorContainer.prototype._createScaleBehavior = function(startScale, endScale) {
-        var _this = this;
-        this.scaleBehavior = new CAAT.ScaleBehavior();
-        this.scaleBehavior.anchor = CAAT.Actor.prototype.ANCHOR_CENTER;
-        this.scaleBehavior.startScaleX = this.scaleBehavior.startScaleY = 0.1;
-        this.scaleBehavior.endScaleX = this.scaleBehavior.endScaleY = 1;
-        this.scaleBehavior.setCycle(false);
-        this.scaleBehavior.setInterpolator(new CAAT.Interpolator().createBounceOutInterpolator(false));
-        this.scaleBehavior.addListener({
-          behaviorExpired: function(behavior, time, actor) {
-            return _this._donePreparing();
-          }
-        });
-        return this.scaleBehavior;
-      };
-
-      LevelActorContainer.prototype._donePreparing = function() {
         return this.levelSequence.state.set(FNT.LevelSequenceStates.READY);
       };
 
-      return LevelActorContainer;
+      LevelSequenceActor.prototype._prepareNextLevel = function(level, position) {
+        this.nextLevelActor = new FNT.LevelActor();
+        this.nextLevelActor.prepare(level, position);
+        return this.addChild(this.nextLevelActor);
+      };
+
+      LevelSequenceActor.prototype._prepareZoom = function() {
+        var interpolator;
+        interpolator = new CAAT.Interpolator().createExponentialInInterpolator(4, false);
+        this.zoomScaleBehavior = new CAAT.ScaleBehavior();
+        this.zoomScaleBehavior.anchor = CAAT.Actor.prototype.ANCHOR_CENTER;
+        this.zoomScaleBehavior.startScaleX = this.zoomScaleBehavior.startScaleY = FNT.LevelActor.PORTAL_SCALE;
+        this.zoomScaleBehavior.endScaleX = this.zoomScaleBehavior.endScaleY = 1;
+        this.zoomScaleBehavior.setInterpolator(interpolator);
+        this.zoomPath = new CAAT.LinearPath().setFinalPosition(0, 0);
+        return this.zoomPathBehavior = new CAAT.PathBehavior().setPath(this.zoomPath).setInterpolator(new CAAT.Interpolator().createExponentialInInterpolator(4, false));
+      };
+
+      LevelSequenceActor.prototype._zoomIn = function(levelActor, startTime, callback) {
+        var _this = this;
+        levelActor.removeBorder();
+        this.zoomScaleBehavior.emptyListenerList();
+        if (callback != null) {
+          this.zoomScaleBehavior.addListener({
+            behaviorExpired: function(behavior, time, actor) {
+              return callback();
+            }
+          });
+        }
+        this.zoomPath.setInitialPosition(levelActor.x, levelActor.y);
+        this.zoomScaleBehavior.setFrameTime(startTime, FNT.Time.TWO_SECONDS);
+        this.zoomPathBehavior.setFrameTime(startTime, FNT.Time.TWO_SECONDS);
+        levelActor.addBehavior(this.zoomScaleBehavior);
+        return levelActor.addBehavior(this.zoomPathBehavior);
+      };
+
+      return LevelSequenceActor;
 
     })(CAAT.ActorContainer);
   });
@@ -1031,7 +948,7 @@
       };
 
       GameSceneActor.prototype.createLevelContainer = function(levelSequence) {
-        return this.levelActorContainer = new FNT.LevelActorContainer().create(this.directorScene, levelSequence).setLocation(0, 0);
+        return this.levelSequenceActor = new FNT.LevelSequenceActor().create(this.directorScene, levelSequence).setLocation(0, 0);
       };
 
       GameSceneActor.prototype.createPlayer = function(player) {

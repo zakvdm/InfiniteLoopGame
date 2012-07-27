@@ -42,12 +42,6 @@ namespace "FNT", (exports) ->
                             {x: 600, y: 300, diameter: 250},
                             {x: 800, y: 300, diameter: 250}],
            },
-           {  # LEVEL 4
-               spawnLocation : {x: 512, y: 800},
-               exit: {x: 300, y: 300},
-               ringData : [
-                            {x: 500, y: 500, diameter: 1000},],
-           },
         ]
       # RACE MODE
       race: 
