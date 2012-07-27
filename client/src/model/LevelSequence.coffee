@@ -41,11 +41,14 @@ namespace "FNT", (exports) ->
       
     currentLevel: -> @_levels[@_currentIndex]
     
-    nextLevel: -> @_levels[@_currentIndex + 1]
+    nextLevel: -> @_levels[@_nextIndex()]
     
     advance: ->
-      @_currentIndex += 1 if @_currentIndex < (@_levels.length - 2)
+      @_currentIndex = @_nextIndex()
       @state.set(FNT.LevelSequenceStates.PREPARING)
+      
+    _nextIndex: ->
+      return (@_currentIndex + 1) % @_levels.length
       
     
     
