@@ -18,6 +18,7 @@ namespace "FNT", (exports) ->
           @startLevel()
 
     startGame: ->
+      @player.state.set(FNT.PlayerStates.DEAD)
       @levelSequence.start()
 
     startLevel: ->
@@ -25,4 +26,5 @@ namespace "FNT", (exports) ->
       @levelSequence.state.set(FNT.LevelSequenceStates.PLAYING)
       
     nextLevel: ->
+      @player.state.set(FNT.PlayerStates.DEAD)
       @levelSequence.advance()

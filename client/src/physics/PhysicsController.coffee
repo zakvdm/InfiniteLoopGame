@@ -28,6 +28,5 @@ namespace "FNT", (exports) ->
       @physics.particles.push(@player)
       
     onPortalCollision: ->
-      @gameModel.player.state.set(FNT.PlayerStates.DEAD)
       @gameModel.nextLevel()
       

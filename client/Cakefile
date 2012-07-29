@@ -11,6 +11,7 @@ files = [
         'base'
         'Time'
         'Game'
+        'Color'
         
         # MODELS:
         'model/ObservableModel'
@@ -26,6 +27,8 @@ files = [
         
         # ACTORS (VIEWS):
         'actor/CircleActor'
+        'actor/Button'
+        'actor/MenuActor'
         'actor/PlayerActor'
         'actor/RingActor'
         'actor/PortalBorderActor'
@@ -51,6 +54,7 @@ files = [
         
         # FACTORIES:
         'factory/GameFactory'
+        'factory/GameUIFactory'
         
         # MAIN:
         'main'

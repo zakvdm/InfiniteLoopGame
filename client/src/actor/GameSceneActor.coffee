@@ -31,6 +31,8 @@ namespace "FNT", (exports) ->
       # CREATE THE BACKGROUND (We want to add this first because it should be at the back):
       @backgroundContainer = new FNT.BackgroundContainer().create(@directorScene, director.width, director.height)
 
+      @gameUI = FNT.GameUIFactory.build(@directorScene, @gameModel)
+      
       @createLevelContainer(@gameModel.levelSequence)
       @createPlayer(@gameModel.player)
 

@@ -25,12 +25,6 @@ namespace "FNT", (exports) ->
       @_acceleration.clear()
       speed = FNT.PhysicsConstants.ORBIT_SPEED
       
-      if @keyboard.UP
-        @_acceleration.y -= speed
-        
-      if @keyboard.DOWN
-        @_acceleration.y += speed
-          
       if @keyboard.RIGHT
         @_acceleration.x += speed
         

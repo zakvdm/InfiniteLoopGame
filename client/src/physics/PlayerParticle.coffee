@@ -13,7 +13,7 @@ namespace "FNT", (exports) ->
       @keyboard.ORBIT.addListener(FNT.KeyDown, => @setOrbitState(true))
       @keyboard.ORBIT.addListener(FNT.KeyUp, => @setOrbitState(false))
 
-      @setRadius(@playerModel.radius)
+      @setRadius(FNT.PlayerConstants.RADIUS)
 
       @levelCollision = new FNT.LevelCollision(@levelSequence, @keyboard)
       @orbiter = new FNT.Orbiter(@levelSequence, @keyboard, @onOrbitStart)

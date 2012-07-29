@@ -1,6 +1,8 @@
 
 namespace "FNT", (exports) ->
 
+  class exports.GameUIFactory
+
   class exports.BackgroundContainer extends CAAT.ActorContainer
     constructor: ->
       super()

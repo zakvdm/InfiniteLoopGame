@@ -11,6 +11,8 @@ namespace "FNT", (exports) ->
       
     setPosition: (point) ->
       @centerAt(point.x, point.y)
+      @
       
     setDiameter: (diameter) ->
       @setSize(diameter, diameter)
+      @

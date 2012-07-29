@@ -1,5 +1,8 @@
 namespace "FNT", (exports) ->
 
+  exports.PlayerConstants =
+    RADIUS:  10
+  
   # PLAYER EVENTS
   exports.PlayerEvents =
     STATE_CHANGE:    "player_event_state_change"
@@ -28,13 +31,12 @@ namespace "FNT", (exports) ->
       @
     
     # PROPERTIES:
-    radius:            12
     COLOR:             "#F00"
     ORBITING_COLOR:    "orange"
     
     create: ->
       @position = new CAAT.Point(0, 0)
-      @diameter = @radius * 2
+      @diameter = FNT.PlayerConstants.RADIUS * 2
       
       @
       
@@ -48,4 +50,6 @@ namespace "FNT", (exports) ->
       @position.y = spawnLocation.y
       
       @notifyObservers(FNT.PlayerEvents.SPAWN, @)
+      
+      @state.set(FNT.PlayerStates.NORMAL)
     

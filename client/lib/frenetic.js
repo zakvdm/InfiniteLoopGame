@@ -34,15 +34,60 @@
   });
 
   namespace("FNT", function(exports) {
-    return exports.Game = (function() {
+    return exports.Game = {
+      WIDTH: 1000,
+      HEIGHT: 1000
+    };
+  });
 
-      function Game() {}
+  namespace("FNT", function(exports) {
+    return exports.Color = (function() {
 
-      Game.WIDTH = 1000;
+      function Color() {}
 
-      Game.HEIGHT = 1000;
+      Color.scheme = "Paleta";
 
-      return Game;
+      Color._get = function(index) {
+        return this[this.scheme][index];
+      };
+
+      Color.OddLots = {
+        BUTTON: "#EDD4A8",
+        BUTTON_DOWN: "#D4C472",
+        BACKGROUND: "#5C565E",
+        3: "#718F85",
+        4: "#BA8A70"
+      };
+
+      Color.Lake = {
+        BUTTON: "#D6DB86",
+        BUTTON_DOWN: "#B7CC9F",
+        BACKGROUND: "#90C2C4",
+        3: "#D1DBCC",
+        4: "#B8DEE3"
+      };
+
+      Color.Paleta = {
+        3: "#006699",
+        4: "#DB952E",
+        BUTTON_DOWN: "#F2F03F",
+        BUTTON: "#F93A34",
+        BACKGROUND: "#E5E5E5"
+      };
+
+      Color.BUTTON = Color._get("BUTTON");
+
+      Color.BUTTON_DOWN = Color._get("BUTTON_DOWN");
+
+      Color.MEDIUM = Color._get(3);
+
+      Color.MEDIUM_DULL = Color._get(4);
+
+      Color.BACKGROUND = Color._get("BACKGROUND");
+
+      Color.BLACK = "black";
+
+      return Color;
 
     })();
   });
@@ -145,8 +190,8 @@
               y: 200
             },
             exit: {
-              x: 200,
-              y: 100
+              x: 950,
+              y: 800
             },
             ringData: [
               {
@@ -154,16 +199,8 @@
                 y: 800,
                 diameter: 150
               }, {
-                x: 550,
-                y: 750,
-                diameter: 150
-              }, {
-                x: 900,
-                y: 600,
-                diameter: 150
-              }, {
                 x: 600,
-                y: 300,
+                y: 800,
                 diameter: 150
               }
             ]
@@ -173,7 +210,7 @@
               y: 200
             },
             exit: {
-              x: 400,
+              x: 950,
               y: 100
             },
             ringData: [
@@ -224,6 +261,9 @@
   });
 
   namespace("FNT", function(exports) {
+    exports.PlayerConstants = {
+      RADIUS: 10
+    };
     exports.PlayerEvents = {
       STATE_CHANGE: "player_event_state_change",
       SPAWN: "player_event_spawn",
@@ -259,15 +299,13 @@
 
       }
 
-      PlayerModel.prototype.radius = 12;
-
       PlayerModel.prototype.COLOR = "#F00";
 
       PlayerModel.prototype.ORBITING_COLOR = "orange";
 
       PlayerModel.prototype.create = function() {
         this.position = new CAAT.Point(0, 0);
-        this.diameter = this.radius * 2;
+        this.diameter = FNT.PlayerConstants.RADIUS * 2;
         return this;
       };
 
@@ -283,7 +321,8 @@
       PlayerModel.prototype.spawn = function(spawnLocation) {
         this.position.x = spawnLocation.x;
         this.position.y = spawnLocation.y;
-        return this.notifyObservers(FNT.PlayerEvents.SPAWN, this);
+        this.notifyObservers(FNT.PlayerEvents.SPAWN, this);
+        return this.state.set(FNT.PlayerStates.NORMAL);
       };
 
       return PlayerModel;
@@ -389,7 +428,8 @@
       NEXT_LEVEL: "level_sequence_event_next_level"
     };
     exports.LevelSequenceStates = {
-      PREPARING: "level_state_preparing",
+      STARTING: "level_state_start",
+      ADVANCING: "level_state_advancing",
       READY: "level_state_ready",
       PLAYING: "level_state_playing"
     };
@@ -430,7 +470,7 @@
 
       LevelSequence.prototype.start = function() {
         this._currentIndex = 0;
-        return this.state.set(FNT.LevelSequenceStates.PREPARING);
+        return this.state.set(FNT.LevelSequenceStates.STARTING);
       };
 
       LevelSequence.prototype.currentLevel = function() {
@@ -443,7 +483,7 @@
 
       LevelSequence.prototype.advance = function() {
         this._currentIndex = this._nextIndex();
-        return this.state.set(FNT.LevelSequenceStates.PREPARING);
+        return this.state.set(FNT.LevelSequenceStates.ADVANCING);
       };
 
       LevelSequence.prototype._nextIndex = function() {
@@ -483,6 +523,7 @@
       };
 
       GameModel.prototype.startGame = function() {
+        this.player.state.set(FNT.PlayerStates.DEAD);
         return this.levelSequence.start();
       };
 
@@ -492,6 +533,7 @@
       };
 
       GameModel.prototype.nextLevel = function() {
+        this.player.state.set(FNT.PlayerStates.DEAD);
         return this.levelSequence.advance();
       };
 
@@ -549,16 +591,132 @@
       }
 
       CircleActor.prototype.setPosition = function(point) {
-        return this.centerAt(point.x, point.y);
+        this.centerAt(point.x, point.y);
+        return this;
       };
 
       CircleActor.prototype.setDiameter = function(diameter) {
-        return this.setSize(diameter, diameter);
+        this.setSize(diameter, diameter);
+        return this;
       };
 
       return CircleActor;
 
     })(CAAT.ShapeActor);
+  });
+
+  namespace("FNT", function(exports) {
+    exports.ButtonConstants = {
+      NORMAL_COLOR: "grey"
+    };
+    exports.ButtonFactory = (function() {
+
+      function ButtonFactory() {}
+
+      ButtonFactory.build = function(parent, diameter, text, onClick) {
+        return new FNT.Button().create(parent, diameter, text, onClick);
+      };
+
+      return ButtonFactory;
+
+    })();
+    return exports.Button = (function(_super) {
+
+      __extends(Button, _super);
+
+      function Button() {
+        Button.__super__.constructor.call(this);
+        this;
+
+      }
+
+      Button.prototype.create = function(parent, diameter, text, onClick) {
+        this.onClick = onClick;
+        this.setDiameter(diameter);
+        this.setLineWidth(2);
+        this.setStrokeStyle('#0');
+        this.setFillStyle(FNT.Color.BUTTON);
+        parent.addChild(this);
+        return this;
+      };
+
+      Button.prototype.mouseEnter = function(mouseEvent) {
+        return this.setFillStyle(FNT.Color.BUTTON_DOWN);
+      };
+
+      Button.prototype.mouseExit = function(mouseEvent) {
+        return this.setFillStyle(FNT.Color.BUTTON);
+      };
+
+      Button.prototype.mouseDown = function(mouseEvent) {
+        return typeof this.onClick === "function" ? this.onClick(mouseEvent) : void 0;
+      };
+
+      return Button;
+
+    })(FNT.CircleActor);
+  });
+
+  namespace("FNT", function(exports) {
+    exports.MenuActorFactory = (function() {
+
+      function MenuActorFactory() {}
+
+      MenuActorFactory.build = function(scene, gameModel) {
+        return new FNT.MenuActor().create(scene, gameModel);
+      };
+
+      return MenuActorFactory;
+
+    })();
+    return exports.MenuActor = (function(_super) {
+
+      __extends(MenuActor, _super);
+
+      function MenuActor() {
+        MenuActor.__super__.constructor.call(this);
+        this;
+
+      }
+
+      MenuActor.prototype.create = function(scene, gameModel) {
+        var _this = this;
+        this.gameModel = gameModel;
+        this.setDiameter(400);
+        this.setPosition(new CAAT.Point(100, 100));
+        this.setFillStyle(FNT.Color.BACKGROUND);
+        this.setLineWidth(2);
+        this.setStrokeStyle(FNT.Color.BLACK);
+        scene.addChild(this);
+        this._createTitleText();
+        this.newGameButton = FNT.ButtonFactory.build(this, 50, "New Game", function() {
+          return _this._newGameClicked();
+        });
+        this.newGameButton.setPosition(new CAAT.Point(250, 230));
+        this.aboutButton = FNT.ButtonFactory.build(this, 30, "Help!", function() {
+          return alert("HELP CLICKED!");
+        });
+        this.aboutButton.setPosition(new CAAT.Point(340, 220));
+        scene.enableInputList(1);
+        scene.addActorToInputList(this.newGameButton, 0, 0);
+        scene.addActorToInputList(this.aboutButton, 0, 0);
+        return this;
+      };
+
+      MenuActor.prototype._newGameClicked = function() {
+        return this.gameModel.startGame();
+      };
+
+      MenuActor.prototype._createTitleText = function() {
+        var text;
+        text = new CAAT.TextActor().setFont("40px sans-serif").setText("Infinite Loop").setTextFillStyle("black").cacheAsBitmap();
+        text.setLocation(120, 120);
+        return this.addChild(text);
+      };
+
+      return MenuActor;
+
+    })(FNT.CircleActor);
   });
 
   /*
@@ -768,7 +926,7 @@
 
       LevelActor.prototype._create = function(ringModel) {
         var ringActor;
-        ringActor = new FNT.RingActor().create(ringModel, 0.8);
+        ringActor = new FNT.RingActor().create(ringModel, 0.7);
         this.ringActors.push(ringActor);
         return this.addChild(ringActor);
       };
@@ -796,19 +954,26 @@
         this.levelSequence = levelSequence;
         this.scene.addChild(this);
         this.levelSequence.addObserver(this);
-        this._prepareNextLevel(this.levelSequence.currentLevel(), new CAAT.Point(FNT.Game.WIDTH / 2, FNT.Game.HEIGHT / 2));
-        this.zoom = this._prepareZoom();
+        this._prepareZoom();
         return this;
       };
 
       LevelSequenceActor.prototype.handleEvent = function(event) {
         switch (event.data) {
-          case FNT.LevelSequenceStates.PREPARING:
-            return this.prepareLevel();
+          case FNT.LevelSequenceStates.STARTING:
+            return this._startSequence();
+          case FNT.LevelSequenceStates.ADVANCING:
+            return this._advanceLevel();
         }
       };
 
-      LevelSequenceActor.prototype.prepareLevel = function() {
+      LevelSequenceActor.prototype._startSequence = function() {
+        this._cleanAll();
+        this._prepareNextLevel(this.levelSequence.currentLevel(), new CAAT.Point(FNT.Game.WIDTH / 2, FNT.Game.HEIGHT / 2));
+        return this._advanceLevel();
+      };
+
+      LevelSequenceActor.prototype._advanceLevel = function() {
         var _this = this;
         this._cleanUpLevel();
         this._zoomIn(this.nextLevelActor, this.scene.time, function() {
@@ -816,6 +981,14 @@
         });
         this.activeLevelActor = this.nextLevelActor;
         return this;
+      };
+
+      LevelSequenceActor.prototype._cleanAll = function() {
+        if (this.nextLevelActor != null) {
+          this.nextLevelActor.discard();
+          this.removeChild(this.nextLevelActor);
+        }
+        return this._cleanUpLevel();
       };
 
       LevelSequenceActor.prototype._cleanUpLevel = function() {
@@ -872,6 +1045,13 @@
   });
 
   namespace("FNT", function(exports) {
+    exports.GameUIFactory = (function() {
+
+      function GameUIFactory() {}
+
+      return GameUIFactory;
+
+    })();
     return exports.BackgroundContainer = (function(_super) {
 
       __extends(BackgroundContainer, _super);
@@ -942,6 +1122,7 @@
           return _this.gameController.step();
         };
         this.backgroundContainer = new FNT.BackgroundContainer().create(this.directorScene, director.width, director.height);
+        this.gameUI = FNT.GameUIFactory.build(this.directorScene, this.gameModel);
         this.createLevelContainer(this.gameModel.levelSequence);
         this.createPlayer(this.gameModel.player);
         return this;
@@ -1150,11 +1331,11 @@
       JUMP_SPEED: -200,
       AIR_MOVE_SPEED: 60,
       ORBIT_SPEED: 200,
-      ORBIT_ATTACH_THRESHOLD: 5,
-      INITIAL_ORBIT_OFFSET: 12,
-      MINIMUM_INNER_ORBIT_OFFSET: 6,
-      MINIMUM_OUTER_ORBIT_OFFSET: 6,
-      ORBIT_CHANGE_PER_SECOND: 6
+      ORBIT_ATTACH_THRESHOLD: 4,
+      INITIAL_ORBIT_OFFSET: FNT.PlayerConstants.RADIUS / 2,
+      MINIMUM_INNER_ORBIT_OFFSET: FNT.PlayerConstants.RADIUS / 2,
+      MINIMUM_OUTER_ORBIT_OFFSET: FNT.PlayerConstants.RADIUS / 2,
+      ORBIT_CHANGE_PER_SECOND: FNT.PlayerConstants.RADIUS / 2
     };
   });
 
@@ -1304,12 +1485,6 @@
         var speed;
         this._acceleration.clear();
         speed = FNT.PhysicsConstants.ORBIT_SPEED;
-        if (this.keyboard.UP) {
-          this._acceleration.y -= speed;
-        }
-        if (this.keyboard.DOWN) {
-          this._acceleration.y += speed;
-        }
         if (this.keyboard.RIGHT) {
           this._acceleration.x += speed;
         }
@@ -1459,7 +1634,7 @@
         this.keyboard.ORBIT.addListener(FNT.KeyUp, function() {
           return _this.setOrbitState(false);
         });
-        this.setRadius(this.playerModel.radius);
+        this.setRadius(FNT.PlayerConstants.RADIUS);
         this.levelCollision = new FNT.LevelCollision(this.levelSequence, this.keyboard);
         this.orbiter = new FNT.Orbiter(this.levelSequence, this.keyboard, this.onOrbitStart);
         this.levelCollision.setActive(false);
@@ -1543,7 +1718,6 @@
       };
 
       PhysicsController.prototype.onPortalCollision = function() {
-        this.gameModel.player.state.set(FNT.PlayerStates.DEAD);
         return this.gameModel.nextLevel();
       };
 
@@ -1553,13 +1727,9 @@
   });
 
   namespace("FNT", function(exports) {
-    return exports.GameFactory = (function(_super) {
+    return exports.GameFactory = (function() {
 
-      __extends(GameFactory, _super);
-
-      function GameFactory() {
-        return GameFactory.__super__.constructor.apply(this, arguments);
-      }
+      function GameFactory() {}
 
       GameFactory.build = function(director) {
         var gameController, gameModel;
@@ -1589,7 +1759,21 @@
 
       return GameFactory;
 
-    })(FNT.ObservableModel);
+    })();
+  });
+
+  namespace("FNT", function(exports) {
+    return exports.GameUIFactory = (function() {
+
+      function GameUIFactory() {}
+
+      GameUIFactory.build = function(scene, gameModel) {
+        return FNT.MenuActorFactory.build(scene, gameModel);
+      };
+
+      return GameUIFactory;
+
+    })();
   });
 
   /*

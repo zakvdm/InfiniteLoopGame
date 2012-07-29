@@ -2,7 +2,7 @@
 # THIS CLASS BUILDS A GAME (The Models, Views, Controllers, EVERYTHING!)
 namespace "FNT", (exports) ->
 
-  class exports.GameFactory extends FNT.ObservableModel
+  class exports.GameFactory
       
     @build: (director) ->
       gameModel = @createGameModel()

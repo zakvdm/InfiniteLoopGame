@@ -22,16 +22,14 @@ namespace "FNT", (exports) ->
            },
            {  # LEVEL 2
                spawnLocation : {x: 80, y: 200},
-               exit: {x: 200, y: 100},
+               exit: {x: 950, y: 800},
                ringData : [  
                             {x: 100, y: 800, diameter: 150}
-                            {x: 550, y: 750, diameter: 150}
-                            {x: 900, y: 600, diameter: 150}
-                            {x: 600, y: 300, diameter: 150}],
+                            {x: 600, y: 800, diameter: 150}],
            },
            {  # LEVEL 3
                spawnLocation :    {x: 312, y: 200},
-               exit: {x: 400, y: 100},
+               exit: {x: 950, y: 100},
                ringData : [  
                             {x: 500, y: 500, diameter: 900},
                             {x: 100, y: 300, diameter: 190},

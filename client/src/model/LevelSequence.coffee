@@ -7,7 +7,8 @@ namespace "FNT", (exports) ->
       
   # LEVEL SEQUENCE STATES
   exports.LevelSequenceStates =
-    PREPARING:        "level_state_preparing"
+    STARTING:         "level_state_start"
+    ADVANCING:        "level_state_advancing"
     READY:            "level_state_ready"
     PLAYING:          "level_state_playing"
 
@@ -37,7 +38,7 @@ namespace "FNT", (exports) ->
       
     start: ->
       @_currentIndex = 0
-      @state.set(FNT.LevelSequenceStates.PREPARING)
+      @state.set(FNT.LevelSequenceStates.STARTING)
       
     currentLevel: -> @_levels[@_currentIndex]
     
@@ -45,7 +46,7 @@ namespace "FNT", (exports) ->
     
     advance: ->
       @_currentIndex = @_nextIndex()
-      @state.set(FNT.LevelSequenceStates.PREPARING)
+      @state.set(FNT.LevelSequenceStates.ADVANCING)
       
     _nextIndex: ->
       return (@_currentIndex + 1) % @_levels.length

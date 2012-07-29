@@ -15,24 +15,39 @@ namespace "FNT", (exports) ->
       # Register for Level Sequence Events
       @levelSequence.addObserver(this)
       
-      @_prepareNextLevel(@levelSequence.currentLevel(), new CAAT.Point(FNT.Game.WIDTH / 2, FNT.Game.HEIGHT / 2))
-      
-      @zoom = @_prepareZoom()
+      @_prepareZoom()
   
       @
      
     handleEvent: (event) ->
       switch event.data
-        when FNT.LevelSequenceStates.PREPARING
-          @prepareLevel()
+        when FNT.LevelSequenceStates.STARTING
+          @_startSequence()
+        when FNT.LevelSequenceStates.ADVANCING
+          @_advanceLevel()
+          
+    _startSequence: ->
+      @_cleanAll()
       
-    prepareLevel: ->
+      # Prepare the initial level which we transition into right away
+      @_prepareNextLevel(@levelSequence.currentLevel(), new CAAT.Point(FNT.Game.WIDTH / 2, FNT.Game.HEIGHT / 2))
+      
+      @_advanceLevel() # Move to the first level
+      
+      
+    _advanceLevel: ->
       @_cleanUpLevel()
       
       @_zoomIn(@nextLevelActor, @scene.time, => @_doneZooming())
       @activeLevelActor = @nextLevelActor
         
       @
+    
+    _cleanAll: ->
+      if @nextLevelActor?
+        @nextLevelActor.discard()
+        @removeChild(@nextLevelActor)
+      @_cleanUpLevel()
       
     _cleanUpLevel: ->
       if @activeLevelActor?
