@@ -2,17 +2,43 @@
         "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
-
     <meta name="viewport" content="width=320; initial-scale=1.0; minimum-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
     <meta name="apple-touch-fullscreen" content="yes" />
 
     <title>Infinite Loop Game</title>
+   
+    <!-- FIRST LOAD THE REQUIRED WEB FONTS, AND ONLY THEN CAN WE START THE GAME... --> 
+    <script type="text/javascript">
+      WebFontConfig = {
+        google: { families: [ 'Plaster' ] },
+        active: function() {
+            console.log("Loaded web fonts")
+            FNT.initGame('Plaster')
+        },
+        inactive: function() {
+            console.log("ERROR: Couldn't Load web fonts")
+            FNT.initGame('sans-serif')
+        },
+      };
+      (function() {
+        var wf = document.createElement('script');
+        wf.src = ('https:' == document.location.protocol ? 'https' : 'http') +
+            '://ajax.googleapis.com/ajax/libs/webfont/1/webfont.js';
+        wf.type = 'text/javascript';
+        wf.async = 'true';
+        var s = document.getElementsByTagName('script')[0];
+        s.parentNode.insertBefore(wf, s);
+      })();
+    </script>
 
     <script type="text/javascript" src="lib/caat.js"></script>
     <script type="text/javascript" src="lib/physics.js"></script>
 
-    <script type="text/javascript" src="lib/frenetic.js"></script>
+    <script type="text/javascript" src="lib/infinite_loop.js"></script>
 
+    <style>
+        canvas { font-family: Plaster, Arial, sans-serif; }
+    </style>
 </head>
 <body bgcolor="#000" style="margin:0; padding:0;" >
     <div id="game" style="overflow:hidden; left:0%; top:0%; width:100%; height:100%;"></div>

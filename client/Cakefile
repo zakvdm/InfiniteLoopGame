@@ -6,7 +6,7 @@ config =
     output: 'lib'
     source: 'src'
 
-target = 'frenetic'
+target = 'infinite_loop'
 files = [
         'base'
         'Time'
