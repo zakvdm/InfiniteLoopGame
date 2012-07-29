@@ -26,10 +26,16 @@ namespace "FNT", (exports) ->
       
       @_createTitleText()
       
-      @newGameButton = FNT.ButtonFactory.build(@, 50, "New Game", => @_newGameClicked())
-      @newGameButton.setPosition(new CAAT.Point(250, 230))
-      @aboutButton = FNT.ButtonFactory.build(@, 30, "Help!", => alert("HELP CLICKED!"))
-      @aboutButton.setPosition(new CAAT.Point(340, 220))
+      @newGameButton = FNT.ButtonFactory.build(@).
+          setDiameter(80).
+          setText("New Game").
+          setOnClick(=> @_newGameClicked()).
+          setPosition(new CAAT.Point(300, 200))
+      @aboutButton = FNT.ButtonFactory.build(@).
+          setDiameter(30).
+          setText("Help!").
+          setOnClick(=> alert("HELP CLICKED!")).
+          setPosition(new CAAT.Point(200, 280))
       
       @scene.enableInputList(1)
       @scene.addActorToInputList( @, 0, 0 )
@@ -74,13 +80,7 @@ namespace "FNT", (exports) ->
       @gameModel.startGame()
       
     _createTitleText: ->
-      text = new CAAT.TextActor().
-          setFont("#{FNT.Game.FONT_SIZE} #{FNT.Game.FONT}").
-          setText("Infinite Loop").
-          setTextFillStyle("black").
-          cacheAsBitmap()
-      text.setLocation(100, 100)
-          
-      @addChild(text)
+      @textActor = FNT.TextFactory.build(@, FNT.Game.NAME, 38)
+      @textActor.setLocation(100, 100)
     
       

@@ -35,3 +35,4 @@ namespace "FNT", (exports) ->
     @BACKGROUND:    @_get("BACKGROUND")
     
     @BLACK:        "black"
+    @FONT:         "#444"

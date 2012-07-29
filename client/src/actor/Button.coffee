@@ -1,27 +1,35 @@
 
 namespace "FNT", (exports) ->
 
-  exports.ButtonConstants =
-    NORMAL_COLOR:        "grey"
-    
   class exports.ButtonFactory
-    @build: (parent, diameter, text, onClick) ->
-      return new FNT.Button().create(parent, diameter, text, onClick)
+    @build: (parent) ->
+      return new FNT.Button().create(parent)
 
   class exports.Button extends FNT.CircleActor
     constructor: ->
       super()
       @
       
-    create : (parent, diameter, text, @onClick) ->
-      @setDiameter(diameter)
-      
+    create : (parent) ->
       @setLineWidth(2)
       @setStrokeStyle('#0')
       @setFillStyle(FNT.Color.BUTTON)
       
       parent.addChild(@)
       
+      @
+    
+    setPosition: (point) ->
+      #@textActor.setLocation(point.x, point.y)
+      super(point)
+      @
+      
+    setText: (text) ->
+      @textActor = FNT.TextFactory.build(@, text, 14)
+      @textActor.setLocation((@width - @textActor.textWidth) / 2, @height + 1)
+      @
+    
+    setOnClick: (@onClick) ->
       @
 
     mouseEnter: (mouseEvent) ->

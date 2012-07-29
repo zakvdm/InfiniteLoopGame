@@ -39,9 +39,9 @@
 
   namespace("FNT", function(exports) {
     return exports.Game = {
+      NAME: "Infinite Loop",
       WIDTH: 1000,
       HEIGHT: 1000,
-      FONT_SIZE: "30px",
       FONT: "sans-serif"
     };
   });
@@ -92,6 +92,8 @@
       Color.BACKGROUND = Color._get("BACKGROUND");
 
       Color.BLACK = "black";
+
+      Color.FONT = "#444";
 
       return Color;
 
@@ -580,6 +582,40 @@
     })(FNT.ObservableModel);
   });
 
+  namespace("FNT", function(exports) {
+    exports.TextFactory = (function() {
+
+      function TextFactory() {}
+
+      TextFactory.build = function(parent, text, size) {
+        return new FNT.Text().create(parent, text, size);
+      };
+
+      return TextFactory;
+
+    })();
+    return exports.Text = (function(_super) {
+
+      __extends(Text, _super);
+
+      function Text() {
+        return Text.__super__.constructor.apply(this, arguments);
+      }
+
+      Text.prototype.create = function(parent, text, size) {
+        this.setFont("" + size + "px " + FNT.Game.FONT);
+        this.setText(text);
+        this.setTextFillStyle(FNT.Color.FONT);
+        this.cacheAsBitmap();
+        parent.addChild(this);
+        return this;
+      };
+
+      return Text;
+
+    })(CAAT.TextActor);
+  });
+
   /*
    # Base class for circle-shaped Actors
   */
@@ -612,15 +648,12 @@
   });
 
   namespace("FNT", function(exports) {
-    exports.ButtonConstants = {
-      NORMAL_COLOR: "grey"
-    };
     exports.ButtonFactory = (function() {
 
       function ButtonFactory() {}
 
-      ButtonFactory.build = function(parent, diameter, text, onClick) {
-        return new FNT.Button().create(parent, diameter, text, onClick);
+      ButtonFactory.build = function(parent) {
+        return new FNT.Button().create(parent);
       };
 
       return ButtonFactory;
@@ -636,13 +669,27 @@
 
       }
 
-      Button.prototype.create = function(parent, diameter, text, onClick) {
-        this.onClick = onClick;
-        this.setDiameter(diameter);
+      Button.prototype.create = function(parent) {
         this.setLineWidth(2);
         this.setStrokeStyle('#0');
         this.setFillStyle(FNT.Color.BUTTON);
         parent.addChild(this);
+        return this;
+      };
+
+      Button.prototype.setPosition = function(point) {
+        Button.__super__.setPosition.call(this, point);
+        return this;
+      };
+
+      Button.prototype.setText = function(text) {
+        this.textActor = FNT.TextFactory.build(this, text, 14);
+        this.textActor.setLocation((this.width - this.textActor.textWidth) / 2, this.height + 1);
+        return this;
+      };
+
+      Button.prototype.setOnClick = function(onClick) {
+        this.onClick = onClick;
         return this;
       };
 
@@ -700,14 +747,12 @@
         this.setStrokeStyle(FNT.Color.BLACK);
         this.scene.addChild(this);
         this._createTitleText();
-        this.newGameButton = FNT.ButtonFactory.build(this, 50, "New Game", function() {
+        this.newGameButton = FNT.ButtonFactory.build(this).setDiameter(80).setText("New Game").setOnClick(function() {
           return _this._newGameClicked();
-        });
-        this.newGameButton.setPosition(new CAAT.Point(250, 230));
-        this.aboutButton = FNT.ButtonFactory.build(this, 30, "Help!", function() {
+        }).setPosition(new CAAT.Point(300, 200));
+        this.aboutButton = FNT.ButtonFactory.build(this).setDiameter(30).setText("Help!").setOnClick(function() {
           return alert("HELP CLICKED!");
-        });
-        this.aboutButton.setPosition(new CAAT.Point(340, 220));
+        }).setPosition(new CAAT.Point(200, 280));
         this.scene.enableInputList(1);
         this.scene.addActorToInputList(this, 0, 0);
         this.scene.addActorToInputList(this.newGameButton, 0, 0);
@@ -752,10 +797,8 @@
       };
 
       MenuActor.prototype._createTitleText = function() {
-        var text;
-        text = new CAAT.TextActor().setFont("" + FNT.Game.FONT_SIZE + " " + FNT.Game.FONT).setText("Infinite Loop").setTextFillStyle("black").cacheAsBitmap();
-        text.setLocation(100, 100);
-        return this.addChild(text);
+        this.textActor = FNT.TextFactory.build(this, FNT.Game.NAME, 38);
+        return this.textActor.setLocation(100, 100);
       };
 
       return MenuActor;

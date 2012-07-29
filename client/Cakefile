@@ -26,6 +26,7 @@ files = [
         'component/StateMachine'
         
         # ACTORS (VIEWS):
+        'actor/Text'
         'actor/CircleActor'
         'actor/Button'
         'actor/MenuActor'
