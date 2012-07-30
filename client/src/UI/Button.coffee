@@ -19,11 +19,6 @@ namespace "FNT", (exports) ->
       
       @
     
-    setPosition: (point) ->
-      #@textActor.setLocation(point.x, point.y)
-      super(point)
-      @
-      
     setText: (text) ->
       @textActor = FNT.TextFactory.build(@, text, 14)
       @textActor.setLocation((@width - @textActor.textWidth) / 2, @height + 1)

@@ -18,7 +18,7 @@ namespace "FNT", (exports) ->
     create : (@scene) ->
       super(@scene)
       
-      @setDiameter(300)
+      @setDiameter(280)
       
       @
       
@@ -29,6 +29,20 @@ namespace "FNT", (exports) ->
       return new CAAT.Point(FNT.Game.WIDTH + 500, FNT.Game.HEIGHT + 500)
       
     _createText: ->
-      @textActor = FNT.TextFactory.build(@, FNT.Game.NAME, 38)
-      @textActor.setLocation(100, 100)
+      left = 65
+      top = 70
+      gap = 10
+      
+      @controls = FNT.TextFactory.build(@, FNT.Strings.CONTROLS, 24).setLocation(left, top)
+      left += gap
+      top += @controls.textHeight + gap
+      
+      @leftAndRight = FNT.TextFactory.build(@, FNT.Strings.LEFT_AND_RIGHT, 18).setLocation(left, top)
+      top += @leftAndRight.textHeight + gap
+      
+      @clamp = FNT.TextFactory.build(@, FNT.Strings.CLAMP, 16).setLocation(left, top)
+      top += @clamp.textHeight + gap
+      
+      @retry = FNT.TextFactory.build(@, FNT.Strings.RETRY, 16).setLocation(left, top)
+      
     

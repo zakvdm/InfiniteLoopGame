@@ -37,7 +37,7 @@ namespace "FNT", (exports) ->
       @path = new CAAT.LinearPath()
       @pathBehavior = new CAAT.PathBehavior().
           setPath(@path).
-          setInterpolator(new CAAT.Interpolator().createExponentialOutInterpolator(4, false))
+          setInterpolator(new CAAT.Interpolator().createExponentialOutInterpolator(6, false))
           
       @addBehavior(@pathBehavior)
       

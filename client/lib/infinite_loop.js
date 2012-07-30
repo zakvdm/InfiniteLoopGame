@@ -39,7 +39,6 @@
 
   namespace("FNT", function(exports) {
     return exports.Game = {
-      NAME: "Infinite Loop",
       WIDTH: 1000,
       HEIGHT: 1000,
       FONT: "sans-serif"
@@ -105,9 +104,21 @@
 
       function Strings() {}
 
+      Strings.GAME_NAME = "Infinite Loop";
+
       Strings.NEW_GAME = "New Game";
 
       Strings.ABOUT = "About...";
+
+      Strings.CLICK_TO_TOGGLE = "click to toggle";
+
+      Strings.CONTROLS = "CONTROLS:";
+
+      Strings.LEFT_AND_RIGHT = "'A' - left, 'D' - right";
+
+      Strings.CLAMP = "'J' - clamp on to a nearby loop";
+
+      Strings.RETRY = "'R' - retry the current level";
 
       return Strings;
 
@@ -1178,7 +1189,7 @@
 
       Panel.prototype._prepareBehaviors = function() {
         this.path = new CAAT.LinearPath();
-        this.pathBehavior = new CAAT.PathBehavior().setPath(this.path).setInterpolator(new CAAT.Interpolator().createExponentialOutInterpolator(4, false));
+        this.pathBehavior = new CAAT.PathBehavior().setPath(this.path).setInterpolator(new CAAT.Interpolator().createExponentialOutInterpolator(6, false));
         return this.addBehavior(this.pathBehavior);
       };
 
@@ -1231,7 +1242,7 @@
       InfoPanel.prototype.create = function(scene) {
         this.scene = scene;
         InfoPanel.__super__.create.call(this, this.scene);
-        this.setDiameter(300);
+        this.setDiameter(280);
         return this;
       };
 
@@ -1244,8 +1255,18 @@
       };
 
       InfoPanel.prototype._createText = function() {
-        this.textActor = FNT.TextFactory.build(this, FNT.Game.NAME, 38);
-        return this.textActor.setLocation(100, 100);
+        var gap, left, top;
+        left = 65;
+        top = 70;
+        gap = 10;
+        this.controls = FNT.TextFactory.build(this, FNT.Strings.CONTROLS, 24).setLocation(left, top);
+        left += gap;
+        top += this.controls.textHeight + gap;
+        this.leftAndRight = FNT.TextFactory.build(this, FNT.Strings.LEFT_AND_RIGHT, 18).setLocation(left, top);
+        top += this.leftAndRight.textHeight + gap;
+        this.clamp = FNT.TextFactory.build(this, FNT.Strings.CLAMP, 16).setLocation(left, top);
+        top += this.clamp.textHeight + gap;
+        return this.retry = FNT.TextFactory.build(this, FNT.Strings.RETRY, 16).setLocation(left, top);
       };
 
       return InfoPanel;
@@ -1271,7 +1292,7 @@
 
       function MenuPanel() {
         this.menuState = {};
-        this.menuState[FNT.PanelState.SHY] = new CAAT.Point(-260, -260);
+        this.menuState[FNT.PanelState.SHY] = new CAAT.Point(-470, -450);
         this.menuState[FNT.PanelState.OUTGOING] = new CAAT.Point(-80, -80);
         MenuPanel.__super__.constructor.call(this);
         this;
@@ -1281,9 +1302,9 @@
       MenuPanel.prototype.create = function(scene) {
         this.scene = scene;
         MenuPanel.__super__.create.call(this, this.scene);
-        this.setDiameter(400);
-        this.newGameButton = FNT.ButtonFactory.build(this).setDiameter(80).setText(FNT.Strings.NEW_GAME).setPosition(new CAAT.Point(300, 200));
-        this.aboutButton = FNT.ButtonFactory.build(this).setDiameter(30).setText(FNT.Strings.ABOUT).setPosition(new CAAT.Point(200, 280));
+        this.setDiameter(600);
+        this.newGameButton = FNT.ButtonFactory.build(this).setDiameter(80).setText(FNT.Strings.NEW_GAME).setPosition(new CAAT.Point(500, 270));
+        this.aboutButton = FNT.ButtonFactory.build(this).setDiameter(30).setText(FNT.Strings.ABOUT).setPosition(new CAAT.Point(300, 480));
         return this;
       };
 
@@ -1296,8 +1317,10 @@
       };
 
       MenuPanel.prototype._createText = function() {
-        this.textActor = FNT.TextFactory.build(this, FNT.Game.NAME, 38);
-        return this.textActor.setLocation(100, 100);
+        this.textActor = FNT.TextFactory.build(this, FNT.Strings.GAME_NAME, 52);
+        this.textActor.setLocation(100, 100);
+        this.toggle = FNT.TextFactory.build(this, FNT.Strings.CLICK_TO_TOGGLE, 12);
+        return this.toggle.setLocation(482, 482).setRotation(-Math.PI / 3.8);
       };
 
       return MenuPanel;
