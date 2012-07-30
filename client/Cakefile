@@ -12,6 +12,7 @@ files = [
         'Time'
         'Game'
         'Color'
+        'Strings'
         
         # MODELS:
         'model/ObservableModel'
@@ -24,12 +25,9 @@ files = [
         
         # COMPONENTS:
         'component/StateMachine'
-        
+
         # ACTORS (VIEWS):
-        'actor/Text'
         'actor/CircleActor'
-        'actor/Button'
-        'actor/MenuActor'
         'actor/PlayerActor'
         'actor/RingActor'
         'actor/PortalBorderActor'
@@ -37,6 +35,14 @@ files = [
         'actor/LevelSequenceActor'
         'actor/BackgroundContainer'
         'actor/GameSceneActor'
+        
+        # UI:        
+        'UI/Text'
+        'UI/Button'
+        'UI/Panel'
+        'UI/InfoPanel'
+        'UI/MenuPanel'
+        'UI/MenuActor'
         
         # CONTROLLERS:
         'controller/GameController'

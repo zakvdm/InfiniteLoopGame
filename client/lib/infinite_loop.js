@@ -101,6 +101,20 @@
   });
 
   namespace("FNT", function(exports) {
+    return exports.Strings = (function() {
+
+      function Strings() {}
+
+      Strings.NEW_GAME = "New Game";
+
+      Strings.ABOUT = "About...";
+
+      return Strings;
+
+    })();
+  });
+
+  namespace("FNT", function(exports) {
     return exports.ObservableModel = (function() {
 
       function ObservableModel() {
@@ -582,40 +596,6 @@
     })(FNT.ObservableModel);
   });
 
-  namespace("FNT", function(exports) {
-    exports.TextFactory = (function() {
-
-      function TextFactory() {}
-
-      TextFactory.build = function(parent, text, size) {
-        return new FNT.Text().create(parent, text, size);
-      };
-
-      return TextFactory;
-
-    })();
-    return exports.Text = (function(_super) {
-
-      __extends(Text, _super);
-
-      function Text() {
-        return Text.__super__.constructor.apply(this, arguments);
-      }
-
-      Text.prototype.create = function(parent, text, size) {
-        this.setFont("" + size + "px " + FNT.Game.FONT);
-        this.setText(text);
-        this.setTextFillStyle(FNT.Color.FONT);
-        this.cacheAsBitmap();
-        parent.addChild(this);
-        return this;
-      };
-
-      return Text;
-
-    })(CAAT.TextActor);
-  });
-
   /*
    # Base class for circle-shaped Actors
   */
@@ -645,165 +625,6 @@
       return CircleActor;
 
     })(CAAT.ShapeActor);
-  });
-
-  namespace("FNT", function(exports) {
-    exports.ButtonFactory = (function() {
-
-      function ButtonFactory() {}
-
-      ButtonFactory.build = function(parent) {
-        return new FNT.Button().create(parent);
-      };
-
-      return ButtonFactory;
-
-    })();
-    return exports.Button = (function(_super) {
-
-      __extends(Button, _super);
-
-      function Button() {
-        Button.__super__.constructor.call(this);
-        this;
-
-      }
-
-      Button.prototype.create = function(parent) {
-        this.setLineWidth(2);
-        this.setStrokeStyle('#0');
-        this.setFillStyle(FNT.Color.BUTTON);
-        parent.addChild(this);
-        return this;
-      };
-
-      Button.prototype.setPosition = function(point) {
-        Button.__super__.setPosition.call(this, point);
-        return this;
-      };
-
-      Button.prototype.setText = function(text) {
-        this.textActor = FNT.TextFactory.build(this, text, 14);
-        this.textActor.setLocation((this.width - this.textActor.textWidth) / 2, this.height + 1);
-        return this;
-      };
-
-      Button.prototype.setOnClick = function(onClick) {
-        this.onClick = onClick;
-        return this;
-      };
-
-      Button.prototype.mouseEnter = function(mouseEvent) {
-        return this.setFillStyle(FNT.Color.BUTTON_DOWN);
-      };
-
-      Button.prototype.mouseExit = function(mouseEvent) {
-        return this.setFillStyle(FNT.Color.BUTTON);
-      };
-
-      Button.prototype.mouseDown = function(mouseEvent) {
-        return typeof this.onClick === "function" ? this.onClick(mouseEvent) : void 0;
-      };
-
-      return Button;
-
-    })(FNT.CircleActor);
-  });
-
-  namespace("FNT", function(exports) {
-    var MenuState;
-    exports.MenuActorFactory = (function() {
-
-      function MenuActorFactory() {}
-
-      MenuActorFactory.build = function(scene, gameModel) {
-        return new FNT.MenuActor().create(scene, gameModel);
-      };
-
-      return MenuActorFactory;
-
-    })();
-    MenuState = {
-      SHY: new CAAT.Point(-260, -260),
-      OUTGOING: new CAAT.Point(-80, -80)
-    };
-    return exports.MenuActor = (function(_super) {
-
-      __extends(MenuActor, _super);
-
-      function MenuActor() {
-        MenuActor.__super__.constructor.call(this);
-        this;
-
-      }
-
-      MenuActor.prototype.create = function(scene, gameModel) {
-        var _this = this;
-        this.scene = scene;
-        this.gameModel = gameModel;
-        this.setDiameter(400);
-        this.setFillStyle(FNT.Color.BACKGROUND);
-        this.setLineWidth(2);
-        this.setStrokeStyle(FNT.Color.BLACK);
-        this.scene.addChild(this);
-        this._createTitleText();
-        this.newGameButton = FNT.ButtonFactory.build(this).setDiameter(80).setText("New Game").setOnClick(function() {
-          return _this._newGameClicked();
-        }).setPosition(new CAAT.Point(300, 200));
-        this.aboutButton = FNT.ButtonFactory.build(this).setDiameter(30).setText("Help!").setOnClick(function() {
-          return alert("HELP CLICKED!");
-        }).setPosition(new CAAT.Point(200, 280));
-        this.scene.enableInputList(1);
-        this.scene.addActorToInputList(this, 0, 0);
-        this.scene.addActorToInputList(this.newGameButton, 0, 0);
-        this.scene.addActorToInputList(this.aboutButton, 0, 0);
-        this._prepareBehaviors();
-        this._animateIn();
-        return this;
-      };
-
-      MenuActor.prototype.mouseDown = function(mouseEvent) {
-        return this._swapState();
-      };
-
-      MenuActor.prototype._prepareBehaviors = function() {
-        this.path = new CAAT.LinearPath();
-        this.pathBehavior = new CAAT.PathBehavior().setPath(this.path).setInterpolator(new CAAT.Interpolator().createExponentialOutInterpolator(4, false));
-        return this.addBehavior(this.pathBehavior);
-      };
-
-      MenuActor.prototype._setState = function(state, animationTime) {
-        if (animationTime == null) {
-          animationTime = FNT.Time.ONE_SECOND;
-        }
-        this.state = state;
-        this.path.setInitialPosition(this.x, this.y);
-        this.path.setFinalPosition(this.state.x, this.state.y);
-        return this.pathBehavior.setFrameTime(this.scene.time, animationTime);
-      };
-
-      MenuActor.prototype._swapState = function() {
-        return this._setState(this.state === MenuState.SHY ? MenuState.OUTGOING : MenuState.SHY);
-      };
-
-      MenuActor.prototype._animateIn = function() {
-        this.setPosition(new CAAT.Point(-500, -500));
-        return this._setState(MenuState.OUTGOING, FNT.Time.FOUR_SECONDS);
-      };
-
-      MenuActor.prototype._newGameClicked = function() {
-        this._setState(MenuState.SHY);
-        return this.gameModel.startGame();
-      };
-
-      MenuActor.prototype._createTitleText = function() {
-        this.textActor = FNT.TextFactory.build(this, FNT.Game.NAME, 38);
-        return this.textActor.setLocation(100, 100);
-      };
-
-      return MenuActor;
-
-    })(FNT.CircleActor);
   });
 
   /*
@@ -1221,6 +1042,332 @@
       };
 
       return GameSceneActor;
+
+    })();
+  });
+
+  namespace("FNT", function(exports) {
+    exports.TextFactory = (function() {
+
+      function TextFactory() {}
+
+      TextFactory.build = function(parent, text, size) {
+        return new FNT.Text().create(parent, text, size);
+      };
+
+      return TextFactory;
+
+    })();
+    return exports.Text = (function(_super) {
+
+      __extends(Text, _super);
+
+      function Text() {
+        return Text.__super__.constructor.apply(this, arguments);
+      }
+
+      Text.prototype.create = function(parent, text, size) {
+        this.setFont("" + size + "px " + FNT.Game.FONT);
+        this.setText(text);
+        this.setTextFillStyle(FNT.Color.FONT);
+        this.cacheAsBitmap();
+        parent.addChild(this);
+        return this;
+      };
+
+      return Text;
+
+    })(CAAT.TextActor);
+  });
+
+  namespace("FNT", function(exports) {
+    exports.ButtonFactory = (function() {
+
+      function ButtonFactory() {}
+
+      ButtonFactory.build = function(parent) {
+        return new FNT.Button().create(parent);
+      };
+
+      return ButtonFactory;
+
+    })();
+    return exports.Button = (function(_super) {
+
+      __extends(Button, _super);
+
+      function Button() {
+        Button.__super__.constructor.call(this);
+        this;
+
+      }
+
+      Button.prototype.create = function(parent) {
+        this.setLineWidth(2);
+        this.setStrokeStyle('#0');
+        this.setFillStyle(FNT.Color.BUTTON);
+        parent.addChild(this);
+        return this;
+      };
+
+      Button.prototype.setText = function(text) {
+        this.textActor = FNT.TextFactory.build(this, text, 14);
+        this.textActor.setLocation((this.width - this.textActor.textWidth) / 2, this.height + 1);
+        return this;
+      };
+
+      Button.prototype.setOnClick = function(onClick) {
+        this.onClick = onClick;
+        return this;
+      };
+
+      Button.prototype.mouseEnter = function(mouseEvent) {
+        return this.setFillStyle(FNT.Color.BUTTON_DOWN);
+      };
+
+      Button.prototype.mouseExit = function(mouseEvent) {
+        return this.setFillStyle(FNT.Color.BUTTON);
+      };
+
+      Button.prototype.mouseDown = function(mouseEvent) {
+        return typeof this.onClick === "function" ? this.onClick(mouseEvent) : void 0;
+      };
+
+      return Button;
+
+    })(FNT.CircleActor);
+  });
+
+  namespace("FNT", function(exports) {
+    exports.PanelState = {
+      SHY: "PANEL_STATE_SHY",
+      OUTGOING: "PANEL_STATE_OUTGOING"
+    };
+    return exports.Panel = (function(_super) {
+
+      __extends(Panel, _super);
+
+      function Panel() {
+        Panel.__super__.constructor.call(this);
+        this;
+
+      }
+
+      Panel.prototype._getPositionForState = function(state) {
+        throw "Should overide!";
+      };
+
+      Panel.prototype._getInitialPosition = function() {
+        throw "Should overide!";
+      };
+
+      Panel.prototype._createText = function() {
+        return console.log("No text added to Panel");
+      };
+
+      Panel.prototype.create = function(scene) {
+        this.scene = scene;
+        this.setFillStyle(FNT.Color.BACKGROUND);
+        this.setLineWidth(2);
+        this.setStrokeStyle(FNT.Color.BLACK);
+        this.scene.addChild(this);
+        this._createText();
+        this._prepareBehaviors();
+        return this;
+      };
+
+      Panel.prototype._prepareBehaviors = function() {
+        this.path = new CAAT.LinearPath();
+        this.pathBehavior = new CAAT.PathBehavior().setPath(this.path).setInterpolator(new CAAT.Interpolator().createExponentialOutInterpolator(4, false));
+        return this.addBehavior(this.pathBehavior);
+      };
+
+      Panel.prototype.setState = function(state, animationTime) {
+        var pos;
+        if (animationTime == null) {
+          animationTime = FNT.Time.ONE_SECOND;
+        }
+        pos = this._getPositionForState(state);
+        this.path.setInitialPosition(this.x, this.y);
+        this.path.setFinalPosition(pos.x, pos.y);
+        return this.pathBehavior.setFrameTime(this.scene.time, animationTime);
+      };
+
+      Panel.prototype.animateIn = function() {
+        this.setPosition(this._getInitialPosition());
+        return this.setState(FNT.PanelState.OUTGOING, FNT.Time.FOUR_SECONDS);
+      };
+
+      return Panel;
+
+    })(FNT.CircleActor);
+  });
+
+  namespace("FNT", function(exports) {
+    exports.InfoPanelFactory = (function() {
+
+      function InfoPanelFactory() {}
+
+      InfoPanelFactory.build = function(scene) {
+        return new FNT.InfoPanel().create(scene);
+      };
+
+      return InfoPanelFactory;
+
+    })();
+    return exports.InfoPanel = (function(_super) {
+
+      __extends(InfoPanel, _super);
+
+      function InfoPanel() {
+        this.infoState = {};
+        this.infoState[FNT.PanelState.SHY] = new CAAT.Point(FNT.Game.WIDTH, FNT.Game.HEIGHT);
+        this.infoState[FNT.PanelState.OUTGOING] = new CAAT.Point(FNT.Game.WIDTH - 350, FNT.Game.HEIGHT - 320);
+        InfoPanel.__super__.constructor.call(this);
+        this;
+
+      }
+
+      InfoPanel.prototype.create = function(scene) {
+        this.scene = scene;
+        InfoPanel.__super__.create.call(this, this.scene);
+        this.setDiameter(300);
+        return this;
+      };
+
+      InfoPanel.prototype._getPositionForState = function(state) {
+        return this.infoState[state];
+      };
+
+      InfoPanel.prototype._getInitialPosition = function() {
+        return new CAAT.Point(FNT.Game.WIDTH + 500, FNT.Game.HEIGHT + 500);
+      };
+
+      InfoPanel.prototype._createText = function() {
+        this.textActor = FNT.TextFactory.build(this, FNT.Game.NAME, 38);
+        return this.textActor.setLocation(100, 100);
+      };
+
+      return InfoPanel;
+
+    })(FNT.Panel);
+  });
+
+  namespace("FNT", function(exports) {
+    exports.MenuPanelFactory = (function() {
+
+      function MenuPanelFactory() {}
+
+      MenuPanelFactory.build = function(scene) {
+        return new FNT.MenuPanel().create(scene);
+      };
+
+      return MenuPanelFactory;
+
+    })();
+    return exports.MenuPanel = (function(_super) {
+
+      __extends(MenuPanel, _super);
+
+      function MenuPanel() {
+        this.menuState = {};
+        this.menuState[FNT.PanelState.SHY] = new CAAT.Point(-260, -260);
+        this.menuState[FNT.PanelState.OUTGOING] = new CAAT.Point(-80, -80);
+        MenuPanel.__super__.constructor.call(this);
+        this;
+
+      }
+
+      MenuPanel.prototype.create = function(scene) {
+        this.scene = scene;
+        MenuPanel.__super__.create.call(this, this.scene);
+        this.setDiameter(400);
+        this.newGameButton = FNT.ButtonFactory.build(this).setDiameter(80).setText(FNT.Strings.NEW_GAME).setPosition(new CAAT.Point(300, 200));
+        this.aboutButton = FNT.ButtonFactory.build(this).setDiameter(30).setText(FNT.Strings.ABOUT).setPosition(new CAAT.Point(200, 280));
+        return this;
+      };
+
+      MenuPanel.prototype._getPositionForState = function(state) {
+        return this.menuState[state];
+      };
+
+      MenuPanel.prototype._getInitialPosition = function() {
+        return new CAAT.Point(-500, -500);
+      };
+
+      MenuPanel.prototype._createText = function() {
+        this.textActor = FNT.TextFactory.build(this, FNT.Game.NAME, 38);
+        return this.textActor.setLocation(100, 100);
+      };
+
+      return MenuPanel;
+
+    })(FNT.Panel);
+  });
+
+  namespace("FNT", function(exports) {
+    exports.MenuActorFactory = (function() {
+
+      function MenuActorFactory() {}
+
+      MenuActorFactory.build = function(scene, gameModel, menuPanel, infoPanel) {
+        return new FNT.MenuActor().create(scene, gameModel, menuPanel, infoPanel);
+      };
+
+      return MenuActorFactory;
+
+    })();
+    return exports.MenuActor = (function() {
+
+      function MenuActor() {}
+
+      MenuActor.prototype.create = function(scene, gameModel, menuPanel, infoPanel) {
+        var _this = this;
+        this.scene = scene;
+        this.gameModel = gameModel;
+        this.menuPanel = menuPanel;
+        this.infoPanel = infoPanel;
+        this.menuPanel.newGameButton.setOnClick(function() {
+          return _this._newGameClicked();
+        });
+        this.menuPanel.aboutButton.setOnClick(function() {
+          return alert("HELP CLICKED!");
+        });
+        this.menuPanel.mouseDown = function(mouseEvent) {
+          return _this._mouseDown(mouseEvent);
+        };
+        this.infoPanel.mouseDown = function(mouseEvent) {
+          return _this._mouseDown(mouseEvent);
+        };
+        this.scene.enableInputList(1);
+        this.scene.addActorToInputList(this.menuPanel, 0, 0);
+        this.scene.addActorToInputList(this.infoPanel, 0, 0);
+        this.scene.addActorToInputList(this.menuPanel.newGameButton, 0, 0);
+        this.scene.addActorToInputList(this.menuPanel.aboutButton, 0, 0);
+        this.menuPanel.animateIn();
+        this.infoPanel.animateIn();
+        this.state = FNT.PanelState.OUTGOING;
+        return this;
+      };
+
+      MenuActor.prototype._mouseDown = function(mouseEvent) {
+        return this._swapState();
+      };
+
+      MenuActor.prototype._swapState = function() {
+        this.state = this.state === FNT.PanelState.SHY ? FNT.PanelState.OUTGOING : FNT.PanelState.SHY;
+        this.menuPanel.setState(this.state);
+        return this.infoPanel.setState(this.state);
+      };
+
+      MenuActor.prototype._newGameClicked = function() {
+        this.state = FNT.PanelState.SHY;
+        this.menuPanel.setState(this.state);
+        this.infoPanel.setState(this.state);
+        return this.gameModel.startGame();
+      };
+
+      return MenuActor;
 
     })();
   });
@@ -1852,7 +1999,10 @@
       function GameUIFactory() {}
 
       GameUIFactory.build = function(scene, gameModel) {
-        return FNT.MenuActorFactory.build(scene, gameModel);
+        var infoPanel, menuPanel;
+        menuPanel = FNT.MenuPanelFactory.build(scene);
+        infoPanel = FNT.InfoPanelFactory.build(scene);
+        return FNT.MenuActorFactory.build(scene, gameModel, menuPanel, infoPanel);
       };
 
       return GameUIFactory;
