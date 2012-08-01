@@ -53,7 +53,7 @@ namespace "FNT", (exports) ->
       @borderActor.addBehavior(@fadeOut.setDelayTime(0, FNT.Time.ONE_SECOND))
      
     _createRing: (ringModel) ->
-      ringActor = new FNT.RingActor().create(ringModel, 0.6)
+      ringActor = new FNT.RingActor().create(ringModel, 0.5)
   
       # ADD TO THE SCENE
       @ringActors.push(ringActor)

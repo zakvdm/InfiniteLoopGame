@@ -1,10 +1,22 @@
 
 namespace "FNT", (exports) ->
 
-  # LEVEL EVENTS
-  exports.RingEvents =
-      ORBITED:    "ring_event_orbited"
+  # RING STATES
+  exports.RingStates =
+    NORMAL:           "ring_state_normal"
+    ORBITED:          "ring_state_orbited"
+    PASSABLE:         "ring_state_passable"
+    
+  class exports.RingModelFactory
+    @build: (ringData) ->
+      ringModel = new FNT.RingModel().create(ringData)
       
+      # COMPONENTS:
+      stateMachine = new FNT.StateMachine(ringModel)
+      ringModel.state = stateMachine
+      
+      return ringModel
+
   # LEVEL MODEL
   class exports.RingModel extends FNT.ObservableModel
     constructor: ->
@@ -21,6 +33,3 @@ namespace "FNT", (exports) ->
       @radius = @diameter / 2
       
       @
-  
-    setOrbited: (@orbited) ->
-      @notifyObservers(FNT.RingEvents.ORBITED, @orbited)      

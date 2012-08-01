@@ -446,9 +446,26 @@
   });
 
   namespace("FNT", function(exports) {
-    exports.RingEvents = {
-      ORBITED: "ring_event_orbited"
+    exports.RingStates = {
+      NORMAL: "ring_state_normal",
+      ORBITED: "ring_state_orbited",
+      PASSABLE: "ring_state_passable"
     };
+    exports.RingModelFactory = (function() {
+
+      function RingModelFactory() {}
+
+      RingModelFactory.build = function(ringData) {
+        var ringModel, stateMachine;
+        ringModel = new FNT.RingModel().create(ringData);
+        stateMachine = new FNT.StateMachine(ringModel);
+        ringModel.state = stateMachine;
+        return ringModel;
+      };
+
+      return RingModelFactory;
+
+    })();
     return exports.RingModel = (function(_super) {
 
       __extends(RingModel, _super);
@@ -467,11 +484,6 @@
         this.diameter = ringData.diameter;
         this.radius = this.diameter / 2;
         return this;
-      };
-
-      RingModel.prototype.setOrbited = function(orbited) {
-        this.orbited = orbited;
-        return this.notifyObservers(FNT.RingEvents.ORBITED, this.orbited);
       };
 
       return RingModel;
@@ -514,7 +526,7 @@
         _results = [];
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           ring = _ref[_i];
-          _results.push(this.rings.push(new FNT.RingModel().create(ring)));
+          _results.push(this.rings.push(FNT.RingModelFactory.build(ring)));
         }
         return _results;
       };
@@ -527,13 +539,28 @@
         return this.texts;
       };
 
+      LevelModel.prototype.setOrbited = function(orbitedRing) {
+        var ring, _i, _len, _ref, _results;
+        _ref = this.rings;
+        _results = [];
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          ring = _ref[_i];
+          if (ring === orbitedRing) {
+            _results.push(orbitedRing.state.set(FNT.RingStates.ORBITED));
+          } else {
+            _results.push(ring.state.set(FNT.RingStates.PASSABLE));
+          }
+        }
+        return _results;
+      };
+
       LevelModel.prototype.resetAllRings = function() {
         var ring, _i, _len, _ref, _results;
         _ref = this.rings;
         _results = [];
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           ring = _ref[_i];
-          _results.push(ring.setOrbited(false));
+          _results.push(ring.state.set(FNT.RingStates.NORMAL));
         }
         return _results;
       };
@@ -813,29 +840,37 @@
         this.setDiameter(ring.diameter);
         this.setPosition(ring.position);
         this.setStrokeStyle(FNT.Color.BLACK);
-        this.setFillStyle(FNT.Color.GRAY);
-        this.setAlpha(this._alpha);
-        this.setLineWidth(1);
+        this._normalState();
         this.ring.addObserver(this);
         return this;
       };
 
       RingActor.prototype.handleEvent = function(event) {
         switch (event.type) {
-          case FNT.RingEvents.ORBITED:
-            return this.orbit(event.data);
+          case FNT.RingStates.NORMAL:
+            return this._normalState();
+          case FNT.RingStates.ORBITED:
+            return this._orbitedState();
+          case FNT.RingStates.PASSABLE:
+            return this._passableState();
         }
       };
 
-      RingActor.prototype.orbit = function(orbited) {
-        if (orbited) {
-          this.setLineWidth(2);
-          return this.setAlpha(0.9);
-        } else {
-          this.setLineWidth(1);
-          this.setFillStyle(FNT.Color.GRAY);
-          return this.setAlpha(this._alpha);
-        }
+      RingActor.prototype._normalState = function() {
+        this.setLineWidth(1);
+        this.setFillStyle(FNT.Color.GRAY);
+        return this.setAlpha(this._alpha);
+      };
+
+      RingActor.prototype._orbitedState = function() {
+        this.setLineWidth(2);
+        return this.setAlpha(0.8);
+      };
+
+      RingActor.prototype._passableState = function() {
+        this.setLineWidth(1);
+        this.setFillStyle(FNT.Color.GRAY);
+        return this.setAlpha(0.2);
       };
 
       return RingActor;
@@ -951,7 +986,7 @@
 
       LevelActor.prototype._createRing = function(ringModel) {
         var ringActor;
-        ringActor = new FNT.RingActor().create(ringModel, 0.6);
+        ringActor = new FNT.RingActor().create(ringModel, 0.5);
         this.ringActors.push(ringActor);
         return this.addChild(ringActor);
       };
@@ -1708,16 +1743,17 @@
 
   namespace("FNT", function(exports) {
     return exports.PhysicsConstants = {
-      GRAVITY: new Vector(0, 200.0),
+      GRAVITY: new Vector(0, 250.0),
       MOVE_SPEED: 200,
       JUMP_SPEED: -200,
       AIR_MOVE_SPEED: 60,
-      ORBIT_SPEED: 200,
+      ORBIT_SPEED: 280,
       ORBIT_ATTACH_THRESHOLD: 4,
       INITIAL_ORBIT_OFFSET: FNT.PlayerConstants.RADIUS / 2,
       MINIMUM_INNER_ORBIT_OFFSET: FNT.PlayerConstants.RADIUS / 2,
       MINIMUM_OUTER_ORBIT_OFFSET: FNT.PlayerConstants.RADIUS / 2,
-      ORBIT_CHANGE_PER_SECOND: FNT.PlayerConstants.RADIUS / 2
+      ORBIT_CHANGE_PER_SECOND: FNT.PlayerConstants.RADIUS / 2,
+      PORTAL_RADIUS: 40
     };
   });
 
@@ -1957,10 +1993,9 @@
 
       __extends(Portal, _super);
 
-      function Portal(levelSequence, player, radius, callback) {
+      function Portal(levelSequence, player, callback) {
         this.levelSequence = levelSequence;
         this.player = player;
-        this.radius = radius;
         this.callback = callback;
         Portal.__super__.constructor.call(this);
         this._delta = new Vector();
@@ -1975,7 +2010,7 @@
         }
         position = this._getPortalPosition();
         dist = this._delta.copy(position).sub(p.pos).mag();
-        if (dist < this.radius) {
+        if (dist < FNT.PhysicsConstants.PORTAL_RADIUS) {
           return this.callback();
         }
       };
@@ -2050,7 +2085,7 @@
 
       PlayerParticle.prototype.onOrbitStart = function(p, ring) {
         p.playerModel.state.set(FNT.PlayerStates.ORBITING);
-        return ring.setOrbited(true);
+        return this.levelSequence.currentLevel().setOrbited(ring);
       };
 
       PlayerParticle.prototype.spawn = function() {
@@ -2082,7 +2117,7 @@
         this.gravity = new ConstantForce(FNT.PhysicsConstants.GRAVITY);
         this.physics.behaviours.push(this.gravity);
         this.initPlayerPhysics(this.gameModel.player, this.gameModel.levelSequence);
-        this.portal = new FNT.Portal(this.gameModel.levelSequence, this.gameModel.player, 50, function() {
+        this.portal = new FNT.Portal(this.gameModel.levelSequence, this.gameModel.player, function() {
           return _this.onPortalCollision();
         });
         this.physics.behaviours.push(this.portal);
@@ -2115,6 +2150,7 @@
 
       GameFactory.build = function(director) {
         var gameController, gameModel;
+        this.createDatGui();
         gameModel = this.createGameModel();
         gameController = this.createGameController(gameModel);
         return this.createGameView(director, gameModel, gameController);
@@ -2137,6 +2173,18 @@
       GameFactory.createGameView = function(director, gameModel, gameController) {
         var gameScene;
         return gameScene = FNT.GameSceneActorFactory.build(director, gameModel, gameController);
+      };
+
+      GameFactory.createDatGui = function() {
+        var gui, physicsFolder;
+        gui = new dat.GUI();
+        physicsFolder = gui.addFolder('Physics');
+        physicsFolder.add(FNT.PhysicsConstants, 'MOVE_SPEED', 0, 500);
+        physicsFolder.add(FNT.PhysicsConstants.GRAVITY, 'y', -400, 400);
+        physicsFolder.add(FNT.PhysicsConstants, 'AIR_MOVE_SPEED', 0, 200);
+        physicsFolder.add(FNT.PhysicsConstants, 'ORBIT_SPEED', 0, 500);
+        physicsFolder.add(FNT.PhysicsConstants, 'ORBIT_ATTACH_THRESHOLD', 0, 20);
+        return physicsFolder.add(FNT.PhysicsConstants, 'PORTAL_RADIUS', 0, 100);
       };
 
       return GameFactory;

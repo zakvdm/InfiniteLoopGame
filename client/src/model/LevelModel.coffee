@@ -22,14 +22,23 @@ namespace "FNT", (exports) ->
       
       @rings = []
       
-      for ring in levelData.ringData
-        @rings.push new FNT.RingModel().create(ring)
+      
+      @rings.push(FNT.RingModelFactory.build(ring)) for ring in levelData.ringData
+        
       
     getRings: -> @rings
     
     getTexts: -> @texts
     
+    setOrbited: (orbitedRing) ->
+      for ring in @rings
+        if ring == orbitedRing
+          orbitedRing.state.set(FNT.RingStates.ORBITED)
+        else
+          ring.state.set(FNT.RingStates.PASSABLE)
+      
+    
     resetAllRings: ->
       for ring in @rings
-        ring.setOrbited(false)
+        ring.state.set(FNT.RingStates.NORMAL)
     

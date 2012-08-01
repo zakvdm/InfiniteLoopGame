@@ -13,7 +13,7 @@ namespace "FNT", (exports) ->
 
       @initPlayerPhysics(@gameModel.player, @gameModel.levelSequence)
       
-      @portal = new FNT.Portal(@gameModel.levelSequence, @gameModel.player, 50, => @onPortalCollision())
+      @portal = new FNT.Portal(@gameModel.levelSequence, @gameModel.player, => @onPortalCollision())
       @physics.behaviours.push(@portal)
       
       @gameModel.addObserver(@)

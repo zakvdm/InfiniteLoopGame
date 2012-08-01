@@ -10,10 +10,9 @@ namespace "FNT", (exports) ->
       @setPosition(ring.position)
   
       @setStrokeStyle(FNT.Color.BLACK)
-      @setFillStyle(FNT.Color.GRAY)
-      @setAlpha(@_alpha)
-      @setLineWidth(1)
-  
+      
+      @_normalState()
+      
       # Register for Ring Events
       @ring.addObserver(this)
   
@@ -21,18 +20,28 @@ namespace "FNT", (exports) ->
       
     handleEvent: (event) ->
       switch event.type
-        when FNT.RingEvents.ORBITED
-          @orbit(event.data)
-          
-    orbit: (orbited) ->
-      if orbited
-        @setLineWidth(2)
-        #@setFillStyle(FNT.Color.DARK_GRAY)
-        @setAlpha(0.9)
-        #@setFillStyle(FNT.Color.MEDIUM_DULL)
-        #@setStrokeStyle(FNT.Color.MEDIUM_DULL)
-      else
-        @setLineWidth(1)
-        @setFillStyle(FNT.Color.GRAY)
-        @setAlpha(@_alpha)
+        when FNT.RingStates.NORMAL
+          @_normalState()
+        when FNT.RingStates.ORBITED
+          @_orbitedState()
+        when FNT.RingStates.PASSABLE
+          @_passableState()
+    
+    _normalState: ->
+      @setLineWidth(1)
+      @setFillStyle(FNT.Color.GRAY)
+      @setAlpha(@_alpha)
+  
+    
+    _orbitedState: ->
+      @setLineWidth(2)
+      #@setFillStyle(FNT.Color.DARK_GRAY)
+      @setAlpha(0.8)
+      #@setFillStyle(FNT.Color.MEDIUM_DULL)
+      #@setStrokeStyle(FNT.Color.MEDIUM_DULL)
+        
+    _passableState: ->
+      @setLineWidth(1)
+      @setFillStyle(FNT.Color.GRAY)
+      @setAlpha(0.2)
   

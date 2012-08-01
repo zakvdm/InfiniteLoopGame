@@ -3,7 +3,7 @@
 namespace "FNT", (exports) ->
 
   class exports.Portal extends Behaviour
-    constructor: (@levelSequence, @player, @radius, @callback) ->
+    constructor: (@levelSequence, @player, @callback) ->
       super()
       @_delta = new Vector()
       @
@@ -14,7 +14,7 @@ namespace "FNT", (exports) ->
       position = @_getPortalPosition()
       dist = @_delta.copy(position).sub(p.pos).mag()
       
-      if dist < @radius
+      if dist < FNT.PhysicsConstants.PORTAL_RADIUS
         @callback()
         
     _getPortalPosition: ->

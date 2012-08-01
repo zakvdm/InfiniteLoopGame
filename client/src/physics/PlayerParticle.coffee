@@ -48,7 +48,7 @@ namespace "FNT", (exports) ->
 
     onOrbitStart: (p, ring) ->
       p.playerModel.state.set(FNT.PlayerStates.ORBITING)
-      ring.setOrbited(true)
+      @levelSequence.currentLevel().setOrbited(ring)
       
 
     spawn: ->
