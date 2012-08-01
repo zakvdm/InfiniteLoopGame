@@ -4,35 +4,44 @@ namespace "FNT", (exports) ->
   class exports.Color
     @scheme: "Paleta"
     
+    @WHITE:        "white"
+    @BLACK:        "black"
+    @GRAY:         "#AAA"
+    @LIGHT_GRAY:   "#CCC"
+    @DARK_GRAY:    "#555"
+    
+    @FONT:         "#333"
+    
     @_get: (index) ->
       return @[@scheme][index]
       
     @OddLots:
-      BUTTON:  "#EDD4A8" # BEIGE
-      BUTTON_DOWN:  "#D4C472" # YELLOW
+      1:           "#EDD4A8" # BEIGE
+      2:           "#D4C472" # YELLOW
+      3:           "#718F85" # GREEN
+      4:           "#BA8A70" # TILE
       BACKGROUND:  "#5C565E" # PURPLE
-      3:  "#718F85" # GREEN
-      4:  "#BA8A70" # TILE
       
     @Lake:
-      BUTTON:  "#D6DB86" # LIME GREEN
-      BUTTON_DOWN:  "#B7CC9F" # OTHER GREEN
+      1:           "#D6DB86" # LIME GREEN
+      2:           "#B7CC9F" # OTHER GREEN
+      3:           "#D1DBCC" # GREY
+      4:           "#B8DEE3" # LIGHT BLUE
       BACKGROUND:  "#90C2C4" # BLUE
-      3:  "#D1DBCC" # GREY
-      4:  "#B8DEE3" # LIGHT BLUE
       
     @Paleta:
-      3:       "#006699" # BLUE
-      4:            "#DB952E" # ORANGE
-      BUTTON_DOWN:  "#F2F03F" # YELLOW
-      BUTTON:            "#F93A34" # RED
-      BACKGROUND:            "#E5E5E5" # GREY
+      1:           "#F93A34" # RED
+      2:           "#F2F03F" # YELLOW
+      3:           "#006699" # BLUE
+      4:           "#DB952E" # ORANGE
+      BACKGROUND:  "#E5E5E5" # GREY
       
-    @BUTTON:        @_get("BUTTON")
-    @BUTTON_DOWN:   @_get("BUTTON_DOWN")
+    @PLAYER:        @_get(1)
+    @BUTTON:        @_get(1)
+    @BUTTON_DOWN:   @_get(2)
+    @PORTAL:        @WHITE
+    
     @MEDIUM:        @_get(3)
     @MEDIUM_DULL:   @_get(4)
     @BACKGROUND:    @_get("BACKGROUND")
     
-    @BLACK:        "black"
-    @FONT:         "#444"

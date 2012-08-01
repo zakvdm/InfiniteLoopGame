@@ -9,7 +9,8 @@ namespace "FNT", (exports) ->
       @setDiameter(diameter)
       @setPosition(position)
   
-      @setFillStyle('gold')
+      #@setFillStyle('gold')
+      @setFillStyle(FNT.Color.PORTAL)
       @setAlpha(1)
   
       @

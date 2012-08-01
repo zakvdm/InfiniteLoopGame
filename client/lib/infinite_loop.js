@@ -32,6 +32,12 @@
 
       Time.FOUR_SECONDS = 4000;
 
+      Time.FIVE_SECONDS = 5000;
+
+      Time.TEN_SECONDS = 10000;
+
+      Time.ONE_MINUTE = 60 * Time.ONE_SECOND;
+
       return Time;
 
     })();
@@ -52,47 +58,59 @@
 
       Color.scheme = "Paleta";
 
+      Color.WHITE = "white";
+
+      Color.BLACK = "black";
+
+      Color.GRAY = "#AAA";
+
+      Color.LIGHT_GRAY = "#CCC";
+
+      Color.DARK_GRAY = "#555";
+
+      Color.FONT = "#333";
+
       Color._get = function(index) {
         return this[this.scheme][index];
       };
 
       Color.OddLots = {
-        BUTTON: "#EDD4A8",
-        BUTTON_DOWN: "#D4C472",
-        BACKGROUND: "#5C565E",
+        1: "#EDD4A8",
+        2: "#D4C472",
         3: "#718F85",
-        4: "#BA8A70"
+        4: "#BA8A70",
+        BACKGROUND: "#5C565E"
       };
 
       Color.Lake = {
-        BUTTON: "#D6DB86",
-        BUTTON_DOWN: "#B7CC9F",
-        BACKGROUND: "#90C2C4",
+        1: "#D6DB86",
+        2: "#B7CC9F",
         3: "#D1DBCC",
-        4: "#B8DEE3"
+        4: "#B8DEE3",
+        BACKGROUND: "#90C2C4"
       };
 
       Color.Paleta = {
+        1: "#F93A34",
+        2: "#F2F03F",
         3: "#006699",
         4: "#DB952E",
-        BUTTON_DOWN: "#F2F03F",
-        BUTTON: "#F93A34",
         BACKGROUND: "#E5E5E5"
       };
 
-      Color.BUTTON = Color._get("BUTTON");
+      Color.PLAYER = Color._get(1);
 
-      Color.BUTTON_DOWN = Color._get("BUTTON_DOWN");
+      Color.BUTTON = Color._get(1);
+
+      Color.BUTTON_DOWN = Color._get(2);
+
+      Color.PORTAL = Color.WHITE;
 
       Color.MEDIUM = Color._get(3);
 
       Color.MEDIUM_DULL = Color._get(4);
 
       Color.BACKGROUND = Color._get("BACKGROUND");
-
-      Color.BLACK = "black";
-
-      Color.FONT = "#444";
 
       return Color;
 
@@ -180,17 +198,85 @@
           {
             spawnLocation: {
               x: 500,
-              y: 500
+              y: 950
             },
             exit: {
               x: 300,
-              y: 800
+              y: 780
             },
             ringData: [
               {
                 x: 500,
                 y: 500,
-                diameter: 1000
+                diameter: 950
+              }
+            ],
+            texts: [
+              {
+                text: "this is you",
+                x: 480,
+                y: 930,
+                start: 0,
+                duration: FNT.Time.THREE_SECONDS,
+                size: 18
+              }, {
+                text: "this is where you want to go",
+                x: 250,
+                y: 720,
+                start: FNT.Time.ONE_SECOND,
+                duration: FNT.Time.THREE_SECONDS,
+                size: 18
+              }, {
+                text: "use 'A' and 'D' to move left and right",
+                x: 250,
+                y: 300,
+                start: FNT.Time.TWO_SECONDS,
+                duration: FNT.Time.TEN_SECONDS,
+                size: 18
+              }, {
+                text: "hold 'J' to attach to a ring",
+                x: 300,
+                y: 500,
+                start: FNT.Time.FOUR_SECONDS,
+                duration: FNT.Time.TEN_SECONDS,
+                size: 18
+              }, {
+                text: "when you release 'J', you get a little boost",
+                x: 400,
+                y: 540,
+                start: FNT.Time.FIVE_SECONDS,
+                duration: FNT.Time.TEN_SECONDS,
+                size: 18
+              }
+            ]
+          }, {
+            spawnLocation: {
+              x: 250,
+              y: 300
+            },
+            exit: {
+              x: 850,
+              y: 750
+            },
+            ringData: [
+              {
+                x: 300,
+                y: 500,
+                diameter: 570
+              }, {
+                x: 700,
+                y: 500,
+                diameter: 570
+              }
+            ],
+            texts: [
+              {
+                text: "HINT: While you're clamped onto a ring, you pass through all other rings!",
+                x: 590,
+                y: 495,
+                start: FNT.Time.ONE_SECOND,
+                duration: FNT.Time.TEN_SECONDS,
+                size: 14
               }
             ]
           }, {
@@ -332,10 +418,6 @@
 
       }
 
-      PlayerModel.prototype.COLOR = "#F00";
-
-      PlayerModel.prototype.ORBITING_COLOR = "orange";
-
       PlayerModel.prototype.create = function() {
         this.position = new CAAT.Point(0, 0);
         this.diameter = FNT.PlayerConstants.RADIUS * 2;
@@ -426,6 +508,7 @@
         var ring, _i, _len, _ref, _results;
         this.spawnLocation = levelData.spawnLocation;
         this.exit = levelData.exit;
+        this.texts = levelData.texts;
         this.rings = [];
         _ref = levelData.ringData;
         _results = [];
@@ -438,6 +521,10 @@
 
       LevelModel.prototype.getRings = function() {
         return this.rings;
+      };
+
+      LevelModel.prototype.getTexts = function() {
+        return this.texts;
       };
 
       LevelModel.prototype.resetAllRings = function() {
@@ -661,7 +748,7 @@
         this.setPosition(this.playerModel.position);
         this.setLineWidth(2);
         this.setStrokeStyle('#0');
-        this.setFillStyle(this.playerModel.COLOR);
+        this.setFillStyle(FNT.Color.PLAYER);
         this.prepareBehaviors();
         this.playerModel.addObserver(this);
         scene.addChild(this);
@@ -681,9 +768,9 @@
           case FNT.PlayerEvents.NEW_POSITION:
             return this.setPosition(this.playerModel.position);
           case FNT.PlayerStates.NORMAL:
-            return this.setFillStyle(this.playerModel.COLOR);
+            return this.setAlpha(1);
           case FNT.PlayerStates.ORBITING:
-            return this.setFillStyle(this.playerModel.ORBITING_COLOR);
+            return this.setAlpha(0.6);
           case FNT.PlayerStates.DEAD:
             return this.kill();
         }
@@ -720,16 +807,15 @@
 
       }
 
-      RingActor.prototype.create = function(ring, alpha) {
+      RingActor.prototype.create = function(ring, _alpha) {
         this.ring = ring;
-        if (alpha == null) {
-          alpha = 0.5;
-        }
+        this._alpha = _alpha != null ? _alpha : 0.5;
         this.setDiameter(ring.diameter);
         this.setPosition(ring.position);
-        this.setStrokeStyle('#0');
-        this.setFillStyle('#AAA');
-        this.setAlpha(alpha);
+        this.setStrokeStyle(FNT.Color.BLACK);
+        this.setFillStyle(FNT.Color.GRAY);
+        this.setAlpha(this._alpha);
+        this.setLineWidth(1);
         this.ring.addObserver(this);
         return this;
       };
@@ -744,10 +830,11 @@
       RingActor.prototype.orbit = function(orbited) {
         if (orbited) {
           this.setLineWidth(2);
-          return this.setFillStyle('yellow');
+          return this.setAlpha(0.9);
         } else {
           this.setLineWidth(1);
-          return this.setFillStyle('#AAA');
+          this.setFillStyle(FNT.Color.GRAY);
+          return this.setAlpha(this._alpha);
         }
       };
 
@@ -770,7 +857,7 @@
       PortalBorderActor.prototype.create = function(diameter, position) {
         this.setDiameter(diameter);
         this.setPosition(position);
-        this.setFillStyle('gold');
+        this.setFillStyle(FNT.Color.PORTAL);
         this.setAlpha(1);
         return this;
       };
@@ -791,24 +878,43 @@
         LevelActor.__super__.constructor.call(this);
         this.setSize(FNT.Game.WIDTH, FNT.Game.HEIGHT);
         this.ringActors = [];
+        this.textActors = [];
         this._prepareBehaviors();
         this;
 
       }
 
       LevelActor.prototype.prepare = function(levelModel, position) {
-        var ringModel, _i, _len, _ref;
+        var ringModel, textData, _i, _j, _len, _len1, _ref, _ref1;
         this.levelModel = levelModel;
         this.emptyBehaviorList();
         this._createBorder();
         _ref = this.levelModel.getRings();
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           ringModel = _ref[_i];
-          this._create(ringModel);
+          this._createRing(ringModel);
+        }
+        if (this.levelModel.getTexts() != null) {
+          _ref1 = this.levelModel.getTexts();
+          for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+            textData = _ref1[_j];
+            this._createText(textData);
+          }
         }
         this.setScale(FNT.LevelActor.PORTAL_SCALE, FNT.LevelActor.PORTAL_SCALE);
         this.centerAt(position.x, position.y);
         return this;
+      };
+
+      LevelActor.prototype.start = function(sceneTime) {
+        var textActor, _i, _len, _ref, _results;
+        _ref = this.textActors;
+        _results = [];
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          textActor = _ref[_i];
+          _results.push(textActor.startTimer(sceneTime));
+        }
+        return _results;
       };
 
       LevelActor.prototype.discard = function() {
@@ -843,11 +949,19 @@
         return this.borderActor.addBehavior(this.fadeOut.setDelayTime(0, FNT.Time.ONE_SECOND));
       };
 
-      LevelActor.prototype._create = function(ringModel) {
+      LevelActor.prototype._createRing = function(ringModel) {
         var ringActor;
-        ringActor = new FNT.RingActor().create(ringModel, 0.7);
+        ringActor = new FNT.RingActor().create(ringModel, 0.6);
         this.ringActors.push(ringActor);
         return this.addChild(ringActor);
+      };
+
+      LevelActor.prototype._createText = function(textData) {
+        var textActor;
+        textActor = FNT.TextFactory.build(this, textData.text, textData.size);
+        textActor.setLocation(textData.x, textData.y);
+        textActor.setTimingInfo(textData.start, textData.duration);
+        return this.textActors.push(textActor);
       };
 
       return LevelActor;
@@ -919,6 +1033,7 @@
 
       LevelSequenceActor.prototype._doneZooming = function() {
         this._prepareNextLevel(this.levelSequence.nextLevel(), this.levelSequence.currentLevel().exit);
+        this.activeLevelActor.start(this.scene.time);
         return this.levelSequence.state.set(FNT.LevelSequenceStates.READY);
       };
 
@@ -937,7 +1052,7 @@
         this.zoomScaleBehavior.endScaleX = this.zoomScaleBehavior.endScaleY = 1;
         this.zoomScaleBehavior.setInterpolator(interpolator);
         this.zoomPath = new CAAT.LinearPath().setFinalPosition(0, 0);
-        return this.zoomPathBehavior = new CAAT.PathBehavior().setPath(this.zoomPath).setInterpolator(new CAAT.Interpolator().createExponentialInInterpolator(4, false));
+        return this.zoomPathBehavior = new CAAT.PathBehavior().setPath(this.zoomPath).setInterpolator(interpolator);
       };
 
       LevelSequenceActor.prototype._zoomIn = function(levelActor, startTime, callback) {
@@ -1084,6 +1199,19 @@
         this.cacheAsBitmap();
         parent.addChild(this);
         return this;
+      };
+
+      Text.prototype.startTimer = function(currentTime) {
+        this.emptyBehaviorList();
+        this.alphaBehavior.setFrameTime(currentTime + this._startTime, this._duration);
+        return this.addBehavior(this.alphaBehavior);
+      };
+
+      Text.prototype.setTimingInfo = function(start, duration) {
+        this.setAlpha(0);
+        this.alphaBehavior = new CAAT.AlphaBehavior().setValues(0, 1).setInterpolator(new CAAT.Interpolator().createExponentialOutInterpolator(6, true));
+        this._startTime = start;
+        return this._duration = duration;
       };
 
       return Text;

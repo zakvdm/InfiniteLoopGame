@@ -15,7 +15,7 @@ namespace "FNT", (exports) ->
       
       @setLineWidth(2)
       @setStrokeStyle('#0')
-      @setFillStyle(@playerModel.COLOR)
+      @setFillStyle(FNT.Color.PLAYER)
       
       @prepareBehaviors()
       
@@ -43,9 +43,9 @@ namespace "FNT", (exports) ->
         when FNT.PlayerEvents.NEW_POSITION
           @setPosition(@playerModel.position)
         when FNT.PlayerStates.NORMAL
-          @setFillStyle(@playerModel.COLOR)
+          @setAlpha(1)
         when FNT.PlayerStates.ORBITING
-          @setFillStyle(@playerModel.ORBITING_COLOR)
+          @setAlpha(0.6)
         when FNT.PlayerStates.DEAD
           @kill()
         

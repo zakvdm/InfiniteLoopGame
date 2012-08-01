@@ -30,10 +30,6 @@ namespace "FNT", (exports) ->
       super()
       @
     
-    # PROPERTIES:
-    COLOR:             "#F00"
-    ORBITING_COLOR:    "orange"
-    
     create: ->
       @position = new CAAT.Point(0, 0)
       @diameter = FNT.PlayerConstants.RADIUS * 2

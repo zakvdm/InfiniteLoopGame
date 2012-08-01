@@ -18,6 +18,7 @@ namespace "FNT", (exports) ->
     load: (levelData) ->
       @spawnLocation = levelData.spawnLocation
       @exit = levelData.exit
+      @texts = levelData.texts # All the little bits of text shown for this level (tutorials, level name, etc.)
       
       @rings = []
       
@@ -25,6 +26,8 @@ namespace "FNT", (exports) ->
         @rings.push new FNT.RingModel().create(ring)
       
     getRings: -> @rings
+    
+    getTexts: -> @texts
     
     resetAllRings: ->
       for ring in @rings

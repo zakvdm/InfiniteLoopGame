@@ -56,6 +56,7 @@ namespace "FNT", (exports) ->
     
     _doneZooming: ->
       @_prepareNextLevel(@levelSequence.nextLevel(), @levelSequence.currentLevel().exit)
+      @activeLevelActor.start(@scene.time)
       @levelSequence.state.set(FNT.LevelSequenceStates.READY)
     
     _prepareNextLevel: (level, position) -> 
@@ -76,7 +77,7 @@ namespace "FNT", (exports) ->
       @zoomPath = new CAAT.LinearPath().setFinalPosition(0, 0);
       @zoomPathBehavior = new CAAT.PathBehavior().
           setPath(@zoomPath).
-          setInterpolator(new CAAT.Interpolator().createExponentialInInterpolator(4, false))
+          setInterpolator(interpolator)
       
     _zoomIn: (levelActor, startTime, callback) ->
       levelActor.removeBorder()

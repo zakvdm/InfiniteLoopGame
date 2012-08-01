@@ -5,13 +5,14 @@ namespace "FNT", (exports) ->
       super()
       @
       
-    create: (@ring, alpha = 0.5) ->
+    create: (@ring, @_alpha = 0.5) ->
       @setDiameter(ring.diameter)
       @setPosition(ring.position)
   
-      @setStrokeStyle('#0')
-      @setFillStyle('#AAA')
-      @setAlpha(alpha)
+      @setStrokeStyle(FNT.Color.BLACK)
+      @setFillStyle(FNT.Color.GRAY)
+      @setAlpha(@_alpha)
+      @setLineWidth(1)
   
       # Register for Ring Events
       @ring.addObserver(this)
@@ -26,8 +27,12 @@ namespace "FNT", (exports) ->
     orbit: (orbited) ->
       if orbited
         @setLineWidth(2)
-        @setFillStyle('yellow')
+        #@setFillStyle(FNT.Color.DARK_GRAY)
+        @setAlpha(0.9)
+        #@setFillStyle(FNT.Color.MEDIUM_DULL)
+        #@setStrokeStyle(FNT.Color.MEDIUM_DULL)
       else
         @setLineWidth(1)
-        @setFillStyle('#AAA')
+        @setFillStyle(FNT.Color.GRAY)
+        @setAlpha(@_alpha)
   
