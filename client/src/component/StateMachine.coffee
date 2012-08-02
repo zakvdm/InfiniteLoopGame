@@ -11,8 +11,6 @@ namespace "FNT", (exports) ->
     get: -> return @state
       
     set: (newState) ->
-      if newState == @state then return
-      
       oldState = newState 
       @state = newState
       @entity.notifyObservers(@state, oldState) # Send the old state as event.data
