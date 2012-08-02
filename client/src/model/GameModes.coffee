@@ -37,32 +37,49 @@ namespace "FNT", (exports) ->
                             {text: "HINT: While you're clamped onto a ring, you pass through all other rings!", x: 590, y: 495, start: FNT.Time.ONE_SECOND, duration: FNT.Time.TEN_SECONDS, size: 14} ]
            }, 
            {
-               spawnLocation : {x: 512, y: 800},
-               exit: {x: 300, y: 300},
+               spawnLocation : {x: FNT.Game.MIDDLE.x, y: FNT.Game.HEIGHT - 100},
+               exit: {x: 420, y: 100},
                ringData : [
-                            {x: 500, y: 500, diameter: 1000},
-                            {x: 500, y: 500, diameter: 300},
-                            {x: 150, y: 150, diameter: 100}],
+                            {x: FNT.Game.MIDDLE.x, y: FNT.Game.MIDDLE.y, diameter: FNT.Game.HEIGHT},
+                            {x: FNT.Game.MIDDLE.x, y: FNT.Game.MIDDLE.y, diameter: 200}, ],
+               texts: [
+                            {text: "seesaw", x: FNT.Game.MIDDLE.x - 50, y: FNT.Game.MIDDLE.y - 50, start: FNT.Time.ONE_SECOND, duration: FNT.Time.FIVE_SECONDS, size: 24} ]
+           },
+           {
+               spawnLocation : {x: 100, y: FNT.Game.MIDDLE.y + 100},
+               exit: {x: 1240, y: FNT.Game.MIDDLE.y},
+               ringData : [
+                            {x: 150, y: FNT.Game.MIDDLE.y, diameter: 250},
+                            {x: 350, y: FNT.Game.MIDDLE.y, diameter: 250},
+                            {x: 550, y: FNT.Game.MIDDLE.y, diameter: 250},
+                            {x: 750, y: FNT.Game.MIDDLE.y, diameter: 250},
+                            {x: 950, y: FNT.Game.MIDDLE.y, diameter: 250},
+                            {x: 1150, y: FNT.Game.MIDDLE.y, diameter: 250}, ],
+               texts: [
+                            {text: "rings", x: FNT.Game.MIDDLE.x - 100, y: FNT.Game.MIDDLE.y - 50, start: FNT.Time.ONE_SECOND, duration: FNT.Time.FIVE_SECONDS, size: 24} ]
            },
            {
                spawnLocation : {x: 80, y: 200},
-               exit: {x: 950, y: 800},
+               exit: {x: 1100, y: FNT.Game.MIDDLE.y + 100},
                ringData : [  
-                            {x: 100, y: 800, diameter: 150}
-                            {x: 600, y: 800, diameter: 150}],
+                            {x: 120, y: FNT.Game.MIDDLE.y + 100, diameter: 150}
+                            {x: 600, y: FNT.Game.MIDDLE.y + 100, diameter: 150}],
+               texts: [
+                            {text: "press 'R' to retry the current level", x: FNT.Game.MIDDLE.x + 100, y: FNT.Game.MIDDLE.y - 50, start: FNT.Time.TEN_SECONDS, duration: FNT.Time.FOUR_SECONDS, size: 18}
+                            {text: "monkeybars", x: 540, y: FNT.Game.MIDDLE.y + 80, start: FNT.Time.ONE_SECOND, duration: FNT.Time.FIVE_SECONDS, size: 24} ]
            },
            {
                spawnLocation :    {x: 312, y: 200},
-               exit: {x: 950, y: 100},
+               exit: {x: 1050, y: 500},
                ringData : [  
-                            {x: 500, y: 500, diameter: 900},
-                            {x: 100, y: 300, diameter: 190},
-                            {x: 300, y: 600, diameter: 200},
-                            {x: 512, y: 512, diameter: 100},
-                            {x: 750, y: 800, diameter: 320},
-                            {x: 820, y: 680, diameter: 120},
-                            {x: 600, y: 300, diameter: 250},
-                            {x: 800, y: 300, diameter: 250}],
+                            {x: 500, y: 400, diameter: 700},
+                            {x: 250, y: 150, diameter: 150},
+                            {x: 300, y: 500, diameter: 200},
+                            {x: 512, y: 412, diameter: 100},
+                            {x: 1050, y: 500, diameter: 320},
+                            {x: 1200, y: 580, diameter: 120},
+                            {x: 700, y: 250, diameter: 200},
+                            {x: 850, y: 250, diameter: 200}],
            },
         ]
       # RACE MODE

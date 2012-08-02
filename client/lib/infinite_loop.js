@@ -324,26 +324,78 @@
             ]
           }, {
             spawnLocation: {
-              x: 512,
-              y: 800
+              x: FNT.Game.MIDDLE.x,
+              y: FNT.Game.HEIGHT - 100
             },
             exit: {
-              x: 300,
-              y: 300
+              x: 420,
+              y: 100
             },
             ringData: [
               {
-                x: 500,
-                y: 500,
-                diameter: 1000
+                x: FNT.Game.MIDDLE.x,
+                y: FNT.Game.MIDDLE.y,
+                diameter: FNT.Game.HEIGHT
               }, {
-                x: 500,
-                y: 500,
-                diameter: 300
-              }, {
+                x: FNT.Game.MIDDLE.x,
+                y: FNT.Game.MIDDLE.y,
+                diameter: 200
+              }
+            ],
+            texts: [
+              {
+                text: "seesaw",
+                x: FNT.Game.MIDDLE.x - 50,
+                y: FNT.Game.MIDDLE.y - 50,
+                start: FNT.Time.ONE_SECOND,
+                duration: FNT.Time.FIVE_SECONDS,
+                size: 24
+              }
+            ]
+          }, {
+            spawnLocation: {
+              x: 100,
+              y: FNT.Game.MIDDLE.y + 100
+            },
+            exit: {
+              x: 1240,
+              y: FNT.Game.MIDDLE.y
+            },
+            ringData: [
+              {
                 x: 150,
-                y: 150,
-                diameter: 100
+                y: FNT.Game.MIDDLE.y,
+                diameter: 250
+              }, {
+                x: 350,
+                y: FNT.Game.MIDDLE.y,
+                diameter: 250
+              }, {
+                x: 550,
+                y: FNT.Game.MIDDLE.y,
+                diameter: 250
+              }, {
+                x: 750,
+                y: FNT.Game.MIDDLE.y,
+                diameter: 250
+              }, {
+                x: 950,
+                y: FNT.Game.MIDDLE.y,
+                diameter: 250
+              }, {
+                x: 1150,
+                y: FNT.Game.MIDDLE.y,
+                diameter: 250
+              }
+            ],
+            texts: [
+              {
+                text: "rings",
+                x: FNT.Game.MIDDLE.x - 100,
+                y: FNT.Game.MIDDLE.y - 50,
+                start: FNT.Time.ONE_SECOND,
+                duration: FNT.Time.FIVE_SECONDS,
+                size: 24
               }
             ]
           }, {
@@ -352,18 +404,35 @@
               y: 200
             },
             exit: {
-              x: 950,
-              y: 800
+              x: 1100,
+              y: FNT.Game.MIDDLE.y + 100
             },
             ringData: [
               {
-                x: 100,
-                y: 800,
+                x: 120,
+                y: FNT.Game.MIDDLE.y + 100,
                 diameter: 150
               }, {
                 x: 600,
-                y: 800,
+                y: FNT.Game.MIDDLE.y + 100,
                 diameter: 150
+              }
+            ],
+            texts: [
+              {
+                text: "press 'R' to retry the current level",
+                x: FNT.Game.MIDDLE.x + 100,
+                y: FNT.Game.MIDDLE.y - 50,
+                start: FNT.Time.TEN_SECONDS,
+                duration: FNT.Time.FOUR_SECONDS,
+                size: 18
+              }, {
+                text: "monkeybars",
+                x: 540,
+                y: FNT.Game.MIDDLE.y + 80,
+                start: FNT.Time.ONE_SECOND,
+                duration: FNT.Time.FIVE_SECONDS,
+                size: 24
               }
             ]
           }, {
@@ -372,42 +441,42 @@
               y: 200
             },
             exit: {
-              x: 950,
-              y: 100
+              x: 1050,
+              y: 500
             },
             ringData: [
               {
                 x: 500,
-                y: 500,
-                diameter: 900
+                y: 400,
+                diameter: 700
               }, {
-                x: 100,
-                y: 300,
-                diameter: 190
+                x: 250,
+                y: 150,
+                diameter: 150
               }, {
                 x: 300,
-                y: 600,
+                y: 500,
                 diameter: 200
               }, {
                 x: 512,
-                y: 512,
+                y: 412,
                 diameter: 100
               }, {
-                x: 750,
-                y: 800,
+                x: 1050,
+                y: 500,
                 diameter: 320
               }, {
-                x: 820,
-                y: 680,
+                x: 1200,
+                y: 580,
                 diameter: 120
               }, {
-                x: 600,
-                y: 300,
-                diameter: 250
+                x: 700,
+                y: 250,
+                diameter: 200
               }, {
-                x: 800,
-                y: 300,
-                diameter: 250
+                x: 850,
+                y: 250,
+                diameter: 200
               }
             ]
           }
@@ -1798,7 +1867,7 @@
       MINIMUM_INNER_ORBIT_OFFSET: FNT.PlayerConstants.RADIUS / 2,
       MINIMUM_OUTER_ORBIT_OFFSET: FNT.PlayerConstants.RADIUS / 2,
       ORBIT_CHANGE_PER_SECOND: FNT.PlayerConstants.RADIUS / 2,
-      PORTAL_RADIUS: 40
+      PORTAL_RADIUS: 42
     };
   });
 
@@ -2195,17 +2264,17 @@
 
       GameFactory.build = function(director) {
         var gameController, gameModel;
-        this.createDatGui();
         gameModel = this.createGameModel();
         gameController = this.createGameController(gameModel);
+        this.createDatGui();
         return this.createGameView(director, gameModel, gameController);
       };
 
       GameFactory.createGameModel = function() {
-        var levelSequence, playerModel;
-        levelSequence = FNT.LevelSequenceFactory.build(FNT.GameModes.quest.levelData);
+        var playerModel;
+        this.levelSequence = FNT.LevelSequenceFactory.build(FNT.GameModes.quest.levelData);
         playerModel = FNT.PlayerFactory.build();
-        return new FNT.GameModel(levelSequence, playerModel);
+        return new FNT.GameModel(this.levelSequence, playerModel);
       };
 
       GameFactory.createGameController = function(gameModel) {
@@ -2221,7 +2290,8 @@
       };
 
       GameFactory.createDatGui = function() {
-        var gui, physicsFolder;
+        var gui, levelController, levelFolder, physicsFolder,
+          _this = this;
         gui = new dat.GUI();
         physicsFolder = gui.addFolder('Physics');
         physicsFolder.add(FNT.PhysicsConstants, 'MOVE_SPEED', 0, 500);
@@ -2229,7 +2299,12 @@
         physicsFolder.add(FNT.PhysicsConstants, 'AIR_MOVE_SPEED', 0, 200);
         physicsFolder.add(FNT.PhysicsConstants, 'ORBIT_SPEED', 0, 500);
         physicsFolder.add(FNT.PhysicsConstants, 'ORBIT_ATTACH_THRESHOLD', 0, 20);
-        return physicsFolder.add(FNT.PhysicsConstants, 'PORTAL_RADIUS', 0, 100);
+        physicsFolder.add(FNT.PhysicsConstants, 'PORTAL_RADIUS', 0, 100);
+        levelFolder = gui.addFolder('Level');
+        levelController = levelFolder.add(this.levelSequence, "_currentIndex", 0, this.levelSequence._levels.length - 1).step(1).listen();
+        return levelController.onFinishChange(function(value) {
+          return _this.levelSequence.skipToLevel(value);
+        });
       };
 
       return GameFactory;
