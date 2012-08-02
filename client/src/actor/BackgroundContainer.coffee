@@ -10,8 +10,8 @@ namespace "FNT", (exports) ->
       
     create : (scene, width, height) ->
       @setBounds 0, 0, width, height
-      @setFillStyle "#555"
+      @setFillStyle(FNT.Color.DARK_GRAY)
       
-      scene.addChild this
+      scene.addChild(this)
       
       @

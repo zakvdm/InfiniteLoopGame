@@ -44,11 +44,21 @@
   });
 
   namespace("FNT", function(exports) {
-    return exports.Game = {
-      WIDTH: 1000,
-      HEIGHT: 1000,
-      FONT: "sans-serif"
-    };
+    return exports.Game = (function() {
+
+      function Game() {}
+
+      Game.WIDTH = 1280;
+
+      Game.HEIGHT = 800;
+
+      Game.MIDDLE = new Vector(Game.WIDTH / 2, Game.HEIGHT / 2);
+
+      Game.FONT = "sans-serif";
+
+      return Game;
+
+    })();
   });
 
   namespace("FNT", function(exports) {
@@ -198,53 +208,86 @@
           {
             spawnLocation: {
               x: 500,
-              y: 950
+              y: 630
             },
             exit: {
               x: 300,
-              y: 780
+              y: 500
             },
             ringData: [
               {
                 x: 500,
-                y: 500,
-                diameter: 950
+                y: 350,
+                diameter: 650
               }
             ],
             texts: [
               {
                 text: "this is you",
                 x: 480,
-                y: 930,
+                y: 630,
                 start: 0,
                 duration: FNT.Time.THREE_SECONDS,
                 size: 18
               }, {
                 text: "this is where you want to go",
                 x: 250,
-                y: 720,
+                y: 420,
                 start: FNT.Time.ONE_SECOND,
                 duration: FNT.Time.THREE_SECONDS,
                 size: 18
               }, {
                 text: "use 'A' and 'D' to move left and right",
                 x: 250,
-                y: 300,
+                y: 200,
                 start: FNT.Time.TWO_SECONDS,
                 duration: FNT.Time.TEN_SECONDS,
                 size: 18
               }, {
                 text: "hold 'J' to attach to a ring",
                 x: 300,
-                y: 500,
+                y: 300,
                 start: FNT.Time.FOUR_SECONDS,
                 duration: FNT.Time.TEN_SECONDS,
                 size: 18
               }, {
                 text: "when you release 'J', you get a little boost",
                 x: 400,
-                y: 540,
+                y: 340,
                 start: FNT.Time.FIVE_SECONDS,
+                duration: FNT.Time.TEN_SECONDS,
+                size: 18
+              }
+            ]
+          }, {
+            spawnLocation: {
+              x: FNT.Game.MIDDLE.x,
+              y: FNT.Game.MIDDLE.y - 275
+            },
+            exit: {
+              x: FNT.Game.MIDDLE.x,
+              y: FNT.Game.MIDDLE.y + 280
+            },
+            ringData: [
+              {
+                x: FNT.Game.MIDDLE.x,
+                y: FNT.Game.MIDDLE.y,
+                diameter: 500
+              }
+            ],
+            texts: [
+              {
+                text: "press 'R' to retry the current level",
+                x: FNT.Game.MIDDLE.x - 100,
+                y: FNT.Game.MIDDLE.y - 10,
+                start: FNT.Time.ONE_SECOND,
+                duration: FNT.Time.FOUR_SECONDS,
+                size: 18
+              }, {
+                text: "HINT: Hold on tight (press 'J')",
+                x: FNT.Game.MIDDLE.x - 100,
+                y: FNT.Game.MIDDLE.y - 10,
+                start: FNT.Time.TEN_SECONDS,
                 duration: FNT.Time.TEN_SECONDS,
                 size: 18
               }
@@ -968,14 +1011,14 @@
       };
 
       LevelActor.prototype._createBorder = function() {
-        var diameter, position, r, sceneWidth;
+        var diameter, position, sceneHeight, sceneWidth;
         sceneWidth = FNT.Game.WIDTH;
-        r = sceneWidth / 2;
+        sceneHeight = FNT.Game.HEIGHT;
         position = {
-          x: r,
-          y: r
+          x: sceneWidth / 2,
+          y: sceneHeight / 2
         };
-        diameter = Math.sqrt(2 * sceneWidth * sceneWidth);
+        diameter = Math.sqrt(sceneWidth * sceneWidth + sceneHeight * sceneHeight);
         this.borderActor = new FNT.PortalBorderActor().create(diameter, position);
         return this.addChild(this.borderActor);
       };
@@ -1133,7 +1176,7 @@
 
       BackgroundContainer.prototype.create = function(scene, width, height) {
         this.setBounds(0, 0, width, height);
-        this.setFillStyle("#555");
+        this.setFillStyle(FNT.Color.DARK_GRAY);
         scene.addChild(this);
         return this;
       };

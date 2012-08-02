@@ -42,10 +42,10 @@ namespace "FNT", (exports) ->
       @fadeOut = new CAAT.AlphaBehavior().setValues(1, 0)
     
     _createBorder: ->
-      sceneWidth = FNT.Game.WIDTH # This assumes that sceneWidth == sceneHeight
-      r = sceneWidth / 2
-      position = { x: r, y: r}
-      diameter = Math.sqrt(2 * sceneWidth * sceneWidth) # Pythagoras to get the distance across the screen
+      sceneWidth = FNT.Game.WIDTH
+      sceneHeight = FNT.Game.HEIGHT
+      position = { x: sceneWidth / 2, y: sceneHeight / 2}
+      diameter = Math.sqrt(sceneWidth * sceneWidth + sceneHeight * sceneHeight) # Pythagoras to get the distance across the screen
       @borderActor = new FNT.PortalBorderActor().create(diameter, position)
       @addChild(@borderActor)
       

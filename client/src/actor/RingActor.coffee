@@ -35,10 +35,7 @@ namespace "FNT", (exports) ->
     
     _orbitedState: ->
       @setLineWidth(2)
-      #@setFillStyle(FNT.Color.DARK_GRAY)
       @setAlpha(0.8)
-      #@setFillStyle(FNT.Color.MEDIUM_DULL)
-      #@setStrokeStyle(FNT.Color.MEDIUM_DULL)
         
     _passableState: ->
       @setLineWidth(1)
