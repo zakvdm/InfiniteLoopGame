@@ -5,17 +5,19 @@ namespace "FNT", (exports) ->
   class exports.GameFactory
       
     @build: (director) ->
-      @createDatGui()
     
       gameModel = @createGameModel()
       gameController = @createGameController(gameModel)
+      
+      @createDatGui()
+      
       return @createGameView(director, gameModel, gameController)
     
     @createGameModel: ->
-      levelSequence = FNT.LevelSequenceFactory.build(FNT.GameModes.quest.levelData)
+      @levelSequence = FNT.LevelSequenceFactory.build(FNT.GameModes.quest.levelData)
       playerModel = FNT.PlayerFactory.build()
       
-      return new FNT.GameModel(levelSequence, playerModel)
+      return new FNT.GameModel(@levelSequence, playerModel)
     
     @createGameController: (gameModel) ->
       keyboard = new FNT.Keyboard().create()
@@ -37,5 +39,9 @@ namespace "FNT", (exports) ->
       physicsFolder.add(FNT.PhysicsConstants, 'ORBIT_SPEED', 0, 500);
       physicsFolder.add(FNT.PhysicsConstants, 'ORBIT_ATTACH_THRESHOLD', 0, 20);
       physicsFolder.add(FNT.PhysicsConstants, 'PORTAL_RADIUS', 0, 100);
+      
+      levelFolder = gui.addFolder('Level')
+      levelController = levelFolder.add(@levelSequence, "_currentIndex", 0, @levelSequence._levels.length - 1).step(1).listen()
+      levelController.onFinishChange((value) => @levelSequence.skipToLevel(value))
       
 
