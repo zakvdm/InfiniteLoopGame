@@ -38,11 +38,13 @@ namespace "FNT", (exports) ->
     _advanceLevel: ->
       @_cleanUpLevel()
       
-      @_zoomIn(@nextLevelActor, @scene.time, => @_doneZooming())
       @activeLevelActor = @nextLevelActor
+      @_prepareNextLevel(@levelSequence.nextLevel(), @levelSequence.currentLevel().exit)
+      
+      @_zoomIn(@activeLevelActor, @scene.time, => @_doneZooming())
         
       @
-    
+      
     _cleanAll: ->
       if @nextLevelActor?
         @nextLevelActor.discard()
@@ -55,13 +57,14 @@ namespace "FNT", (exports) ->
         @removeChild(@activeLevelActor)
     
     _doneZooming: ->
-      @_prepareNextLevel(@levelSequence.nextLevel(), @levelSequence.currentLevel().exit)
       @activeLevelActor.start(@scene.time)
+      @nextLevelActor.setVisible(true)
       @levelSequence.state.set(FNT.LevelSequenceStates.READY)
     
     _prepareNextLevel: (level, position) -> 
       @nextLevelActor = new FNT.LevelActor()
       @nextLevelActor.prepare(level, position) # We pre-load the first level so that when the game starts, we can just "transition" it in
+      @nextLevelActor.setVisible(false)
       @addChild(@nextLevelActor)
     
     _prepareZoom: ->  
@@ -81,6 +84,7 @@ namespace "FNT", (exports) ->
       
     _zoomIn: (levelActor, startTime, callback) ->
       levelActor.removeBorder()
+      levelActor.setVisible(true) # Make sure that we're transitioning to a visible level (this can be an issue when skipping around...)
       
       @zoomScaleBehavior.emptyListenerList()
       if callback? then @zoomScaleBehavior.addListener({ behaviorExpired : (behavior, time, actor) => callback()})

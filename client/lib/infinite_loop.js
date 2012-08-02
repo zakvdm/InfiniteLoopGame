@@ -614,9 +614,6 @@
   });
 
   namespace("FNT", function(exports) {
-    exports.LevelSequenceEvents = {
-      NEXT_LEVEL: "level_sequence_event_next_level"
-    };
     exports.LevelSequenceStates = {
       STARTING: "level_state_start",
       ADVANCING: "level_state_advancing",
@@ -674,6 +671,11 @@
       LevelSequence.prototype.advance = function() {
         this._currentIndex = this._nextIndex();
         return this.state.set(FNT.LevelSequenceStates.ADVANCING);
+      };
+
+      LevelSequence.prototype.skipToLevel = function(levelIndex) {
+        this._currentIndex = levelIndex % this._levels.length;
+        return this.state.set(FNT.LevelSequenceStates.STARTING);
       };
 
       LevelSequence.prototype._nextIndex = function() {
@@ -751,9 +753,6 @@
 
       StateMachine.prototype.set = function(newState) {
         var oldState;
-        if (newState === this.state) {
-          return;
-        }
         oldState = newState;
         this.state = newState;
         return this.entity.notifyObservers(this.state, oldState);
@@ -1087,10 +1086,11 @@
       LevelSequenceActor.prototype._advanceLevel = function() {
         var _this = this;
         this._cleanUpLevel();
-        this._zoomIn(this.nextLevelActor, this.scene.time, function() {
+        this.activeLevelActor = this.nextLevelActor;
+        this._prepareNextLevel(this.levelSequence.nextLevel(), this.levelSequence.currentLevel().exit);
+        this._zoomIn(this.activeLevelActor, this.scene.time, function() {
           return _this._doneZooming();
         });
-        this.activeLevelActor = this.nextLevelActor;
         return this;
       };
 
@@ -1110,14 +1110,15 @@
       };
 
       LevelSequenceActor.prototype._doneZooming = function() {
-        this._prepareNextLevel(this.levelSequence.nextLevel(), this.levelSequence.currentLevel().exit);
         this.activeLevelActor.start(this.scene.time);
+        this.nextLevelActor.setVisible(true);
         return this.levelSequence.state.set(FNT.LevelSequenceStates.READY);
       };
 
       LevelSequenceActor.prototype._prepareNextLevel = function(level, position) {
         this.nextLevelActor = new FNT.LevelActor();
         this.nextLevelActor.prepare(level, position);
+        this.nextLevelActor.setVisible(false);
         return this.addChild(this.nextLevelActor);
       };
 
@@ -1136,6 +1137,7 @@
       LevelSequenceActor.prototype._zoomIn = function(levelActor, startTime, callback) {
         var _this = this;
         levelActor.removeBorder();
+        levelActor.setVisible(true);
         this.zoomScaleBehavior.emptyListenerList();
         if (callback != null) {
           this.zoomScaleBehavior.addListener({

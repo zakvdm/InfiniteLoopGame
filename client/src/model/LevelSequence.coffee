@@ -1,10 +1,6 @@
 
 namespace "FNT", (exports) ->
 
-  # LEVEL SEQUENCE EVENTS
-  exports.LevelSequenceEvents =
-      NEXT_LEVEL:    "level_sequence_event_next_level"
-      
   # LEVEL SEQUENCE STATES
   exports.LevelSequenceStates =
     STARTING:         "level_state_start"
@@ -47,6 +43,11 @@ namespace "FNT", (exports) ->
     advance: ->
       @_currentIndex = @_nextIndex()
       @state.set(FNT.LevelSequenceStates.ADVANCING)
+      
+    skipToLevel: (levelIndex) ->
+      @_currentIndex = levelIndex % @_levels.length
+      @state.set(FNT.LevelSequenceStates.STARTING) # We can start the sequence from an arbitrary point (and it'll just loop from there)
+    
       
     _nextIndex: ->
       return (@_currentIndex + 1) % @_levels.length
