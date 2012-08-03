@@ -10,6 +10,7 @@ namespace "FNT", (exports) ->
       @setSize(FNT.Game.WIDTH, FNT.Game.HEIGHT)
       
       @ringActors = []
+      @portalActors = []
       @textActors = []
       @_prepareBehaviors()
       @
@@ -19,6 +20,8 @@ namespace "FNT", (exports) ->
       
       @_createBorder()
       @_createRing(ringModel) for ringModel in @levelModel.getRings() # Create all the RingActors
+      
+      @_createPortal(portalModel) for portalModel in @levelModel.getPortals()
       
       if @levelModel.getTexts()?
         @_createText(textData) for textData in @levelModel.getTexts()
@@ -35,6 +38,8 @@ namespace "FNT", (exports) ->
 
     discard: ->
       ring.setDiscardable(true).setExpired(true) for ring in @ringActors
+      portal.setDiscardable(true).setExpired(true) for portal in @portalActors
+      text.setDiscardable(true).setExpired(true) for text in @textActors
       @borderActor.setDiscardable(true).setExpired(true)
       @setDiscardable(true).setExpired(true)
       
@@ -46,8 +51,7 @@ namespace "FNT", (exports) ->
       sceneHeight = FNT.Game.HEIGHT
       position = { x: sceneWidth / 2, y: sceneHeight / 2}
       diameter = Math.sqrt(sceneWidth * sceneWidth + sceneHeight * sceneHeight) # Pythagoras to get the distance across the screen
-      @borderActor = new FNT.PortalBorderActor().create(diameter, position)
-      @addChild(@borderActor)
+      @borderActor = new FNT.PortalActor().create(@, diameter, position)
       
     removeBorder: ->
       @borderActor.addBehavior(@fadeOut.setDelayTime(0, FNT.Time.ONE_SECOND))
@@ -58,6 +62,9 @@ namespace "FNT", (exports) ->
       # ADD TO THE SCENE
       @ringActors.push(ringActor)
       @addChild(ringActor) # Add it to the scene graph
+      
+    _createPortal: (portal) ->
+      @portalActors.push(new FNT.PortalActor().create(@, portal.diameter, portal.position, portal.type.color))
         
     _createText: (textData) ->
       textActor = FNT.TextFactory.build(@, textData.text, textData.size)

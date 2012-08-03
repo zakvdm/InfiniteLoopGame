@@ -3,7 +3,7 @@
 namespace "FNT", (exports) ->
 
   class exports.Portal extends Behaviour
-    constructor: (@levelSequence, @player, @callback) ->
+    constructor: (@levelSequence, @player, @exitCallback, @respawnCallback) ->
       super()
       @_delta = new Vector()
       @
@@ -11,11 +11,27 @@ namespace "FNT", (exports) ->
     apply: (p, dt, index) ->
       if @player.state.get() is FNT.PlayerStates.DEAD then return
       
-      position = @_getPortalPosition()
-      dist = @_delta.copy(position).sub(p.pos).mag()
+      @_checkExit(p)
+      
+      @_checkRespawn(p)
+        
+    _checkExit: (p) ->
+      dist = @_getDistance(@levelSequence.currentLevel().exit, p)
       
       if dist < FNT.PhysicsConstants.PORTAL_RADIUS
-        @callback()
+        @exitCallback()
+        
+    _checkRespawn: (p) ->
+      for portal in @levelSequence.currentLevel().getPortals()
+        dist = @_getDistance(portal.position, p)
+        
+        if dist < portal.radius + FNT.PlayerConstants.RADIUS
+          @respawnCallback()
         
     _getPortalPosition: ->
       return new Vector(@levelSequence.currentLevel().exit.x, @levelSequence.currentLevel().exit.y)
+      
+    _getDistance: (portal, p) ->
+      position = new Vector(portal.x, portal.y)
+      return @_delta.copy(position).sub(p.pos).mag()
+      

@@ -24,9 +24,6 @@ namespace "FNT", (exports) ->
       super()
       @
       
-      
-    diameter:     0
-  
     create: (ringData) ->
       @position = new CAAT.Point(ringData.x, ringData.y)
       @diameter = ringData.diameter

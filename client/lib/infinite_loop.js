@@ -128,7 +128,7 @@
   });
 
   namespace("FNT", function(exports) {
-    return exports.Strings = (function() {
+    exports.Strings = (function() {
 
       function Strings() {}
 
@@ -149,6 +149,17 @@
       Strings.RETRY = "'R' - retry the current level";
 
       return Strings;
+
+    })();
+    return exports.Portals = (function() {
+
+      function Portals() {}
+
+      Portals.RESPAWN = {
+        color: FNT.Color.BLACK
+      };
+
+      return Portals;
 
     })();
   });
@@ -219,6 +230,14 @@
                 x: 500,
                 y: 350,
                 diameter: 650
+              }
+            ],
+            portals: [
+              {
+                type: FNT.Portals.RESPAWN,
+                x: 700,
+                y: 500,
+                diameter: 90
               }
             ],
             texts: [
@@ -320,6 +339,54 @@
                 start: FNT.Time.ONE_SECOND,
                 duration: FNT.Time.TEN_SECONDS,
                 size: 14
+              }
+            ]
+          }, {
+            spawnLocation: {
+              x: 80,
+              y: 550
+            },
+            exit: {
+              x: 600,
+              y: 700
+            },
+            ringData: [
+              {
+                x: 300,
+                y: 400,
+                diameter: 570
+              }, {
+                x: 500,
+                y: 600,
+                diameter: 300
+              }
+            ],
+            portals: [
+              {
+                type: FNT.Portals.RESPAWN,
+                x: 300,
+                y: 700,
+                diameter: 100
+              }, {
+                type: FNT.Portals.RESPAWN,
+                x: 650,
+                y: 200,
+                diameter: 200
+              }, {
+                type: FNT.Portals.RESPAWN,
+                x: 900,
+                y: 500,
+                diameter: 400
+              }
+            ],
+            texts: [
+              {
+                text: "black holes",
+                x: 200,
+                y: 495,
+                start: FNT.Time.ONE_SECOND,
+                duration: FNT.Time.TEN_SECONDS,
+                size: 30
               }
             ]
           }, {
@@ -492,6 +559,37 @@
   });
 
   namespace("FNT", function(exports) {
+    exports.PortalModelFactory = (function() {
+
+      function PortalModelFactory() {}
+
+      PortalModelFactory.build = function(portalData) {
+        var portalModel;
+        portalModel = new FNT.PortalModel().create(portalData);
+        return portalModel;
+      };
+
+      return PortalModelFactory;
+
+    })();
+    return exports.PortalModel = (function() {
+
+      function PortalModel() {}
+
+      PortalModel.prototype.create = function(portalData) {
+        this.position = new CAAT.Point(portalData.x, portalData.y);
+        this.diameter = portalData.diameter;
+        this.radius = this.diameter / 2;
+        this.type = portalData.type;
+        return this;
+      };
+
+      return PortalModel;
+
+    })();
+  });
+
+  namespace("FNT", function(exports) {
     exports.PlayerConstants = {
       RADIUS: 10
     };
@@ -589,8 +687,6 @@
 
       }
 
-      RingModel.prototype.diameter = 0;
-
       RingModel.prototype.create = function(ringData) {
         this.position = new CAAT.Point(ringData.x, ringData.y);
         this.diameter = ringData.diameter;
@@ -629,31 +725,43 @@
       }
 
       LevelModel.prototype.load = function(levelData) {
-        var ring, _i, _len, _ref, _results;
+        var portal, ring, _i, _j, _len, _len1, _ref, _ref1, _results;
         this.spawnLocation = levelData.spawnLocation;
         this.exit = levelData.exit;
-        this.texts = levelData.texts;
-        this.rings = [];
+        this._texts = levelData.texts;
+        this._rings = [];
         _ref = levelData.ringData;
-        _results = [];
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           ring = _ref[_i];
-          _results.push(this.rings.push(FNT.RingModelFactory.build(ring)));
+          this._rings.push(FNT.RingModelFactory.build(ring));
         }
-        return _results;
+        this._portals = [];
+        if (levelData.portals != null) {
+          _ref1 = levelData.portals;
+          _results = [];
+          for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+            portal = _ref1[_j];
+            _results.push(this._portals.push(FNT.PortalModelFactory.build(portal)));
+          }
+          return _results;
+        }
       };
 
       LevelModel.prototype.getRings = function() {
-        return this.rings;
+        return this._rings;
+      };
+
+      LevelModel.prototype.getPortals = function() {
+        return this._portals;
       };
 
       LevelModel.prototype.getTexts = function() {
-        return this.texts;
+        return this._texts;
       };
 
       LevelModel.prototype.setOrbited = function(orbitedRing) {
         var ring, _i, _len, _ref, _results;
-        _ref = this.rings;
+        _ref = this._rings;
         _results = [];
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           ring = _ref[_i];
@@ -668,7 +776,7 @@
 
       LevelModel.prototype.resetAllRings = function() {
         var ring, _i, _len, _ref, _results;
-        _ref = this.rings;
+        _ref = this._rings;
         _results = [];
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           ring = _ref[_i];
@@ -990,25 +1098,29 @@
   });
 
   namespace("FNT", function(exports) {
-    return exports.PortalBorderActor = (function(_super) {
+    return exports.PortalActor = (function(_super) {
 
-      __extends(PortalBorderActor, _super);
+      __extends(PortalActor, _super);
 
-      function PortalBorderActor() {
-        PortalBorderActor.__super__.constructor.call(this);
+      function PortalActor() {
+        PortalActor.__super__.constructor.call(this);
         this;
 
       }
 
-      PortalBorderActor.prototype.create = function(diameter, position) {
+      PortalActor.prototype.create = function(parent, diameter, position, color) {
+        if (color == null) {
+          color = FNT.Color.PORTAL;
+        }
         this.setDiameter(diameter);
         this.setPosition(position);
-        this.setFillStyle(FNT.Color.PORTAL);
+        this.setFillStyle(color);
         this.setAlpha(1);
+        parent.addChild(this);
         return this;
       };
 
-      return PortalBorderActor;
+      return PortalActor;
 
     })(FNT.CircleActor);
   });
@@ -1024,6 +1136,7 @@
         LevelActor.__super__.constructor.call(this);
         this.setSize(FNT.Game.WIDTH, FNT.Game.HEIGHT);
         this.ringActors = [];
+        this.portalActors = [];
         this.textActors = [];
         this._prepareBehaviors();
         this;
@@ -1031,7 +1144,7 @@
       }
 
       LevelActor.prototype.prepare = function(levelModel, position) {
-        var ringModel, textData, _i, _j, _len, _len1, _ref, _ref1;
+        var portalModel, ringModel, textData, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _ref2;
         this.levelModel = levelModel;
         this.emptyBehaviorList();
         this._createBorder();
@@ -1040,10 +1153,15 @@
           ringModel = _ref[_i];
           this._createRing(ringModel);
         }
+        _ref1 = this.levelModel.getPortals();
+        for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+          portalModel = _ref1[_j];
+          this._createPortal(portalModel);
+        }
         if (this.levelModel.getTexts() != null) {
-          _ref1 = this.levelModel.getTexts();
-          for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
-            textData = _ref1[_j];
+          _ref2 = this.levelModel.getTexts();
+          for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
+            textData = _ref2[_k];
             this._createText(textData);
           }
         }
@@ -1064,11 +1182,21 @@
       };
 
       LevelActor.prototype.discard = function() {
-        var ring, _i, _len, _ref;
+        var portal, ring, text, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _ref2;
         _ref = this.ringActors;
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           ring = _ref[_i];
           ring.setDiscardable(true).setExpired(true);
+        }
+        _ref1 = this.portalActors;
+        for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+          portal = _ref1[_j];
+          portal.setDiscardable(true).setExpired(true);
+        }
+        _ref2 = this.textActors;
+        for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
+          text = _ref2[_k];
+          text.setDiscardable(true).setExpired(true);
         }
         this.borderActor.setDiscardable(true).setExpired(true);
         return this.setDiscardable(true).setExpired(true);
@@ -1087,8 +1215,7 @@
           y: sceneHeight / 2
         };
         diameter = Math.sqrt(sceneWidth * sceneWidth + sceneHeight * sceneHeight);
-        this.borderActor = new FNT.PortalBorderActor().create(diameter, position);
-        return this.addChild(this.borderActor);
+        return this.borderActor = new FNT.PortalActor().create(this, diameter, position);
       };
 
       LevelActor.prototype.removeBorder = function() {
@@ -1100,6 +1227,10 @@
         ringActor = new FNT.RingActor().create(ringModel, 0.5);
         this.ringActors.push(ringActor);
         return this.addChild(ringActor);
+      };
+
+      LevelActor.prototype._createPortal = function(portal) {
+        return this.portalActors.push(new FNT.PortalActor().create(this, portal.diameter, portal.position, portal.type.color));
       };
 
       LevelActor.prototype._createText = function(textData) {
@@ -1867,7 +1998,7 @@
       MINIMUM_INNER_ORBIT_OFFSET: FNT.PlayerConstants.RADIUS / 2,
       MINIMUM_OUTER_ORBIT_OFFSET: FNT.PlayerConstants.RADIUS / 2,
       ORBIT_CHANGE_PER_SECOND: FNT.PlayerConstants.RADIUS / 2,
-      PORTAL_RADIUS: 42
+      PORTAL_RADIUS: 45
     };
   });
 
@@ -2107,10 +2238,11 @@
 
       __extends(Portal, _super);
 
-      function Portal(levelSequence, player, callback) {
+      function Portal(levelSequence, player, exitCallback, respawnCallback) {
         this.levelSequence = levelSequence;
         this.player = player;
-        this.callback = callback;
+        this.exitCallback = exitCallback;
+        this.respawnCallback = respawnCallback;
         Portal.__super__.constructor.call(this);
         this._delta = new Vector();
         this;
@@ -2118,19 +2250,45 @@
       }
 
       Portal.prototype.apply = function(p, dt, index) {
-        var dist, position;
         if (this.player.state.get() === FNT.PlayerStates.DEAD) {
           return;
         }
-        position = this._getPortalPosition();
-        dist = this._delta.copy(position).sub(p.pos).mag();
+        this._checkExit(p);
+        return this._checkRespawn(p);
+      };
+
+      Portal.prototype._checkExit = function(p) {
+        var dist;
+        dist = this._getDistance(this.levelSequence.currentLevel().exit, p);
         if (dist < FNT.PhysicsConstants.PORTAL_RADIUS) {
-          return this.callback();
+          return this.exitCallback();
         }
+      };
+
+      Portal.prototype._checkRespawn = function(p) {
+        var dist, portal, _i, _len, _ref, _results;
+        _ref = this.levelSequence.currentLevel().getPortals();
+        _results = [];
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          portal = _ref[_i];
+          dist = this._getDistance(portal.position, p);
+          if (dist < portal.radius + FNT.PlayerConstants.RADIUS) {
+            _results.push(this.respawnCallback());
+          } else {
+            _results.push(void 0);
+          }
+        }
+        return _results;
       };
 
       Portal.prototype._getPortalPosition = function() {
         return new Vector(this.levelSequence.currentLevel().exit.x, this.levelSequence.currentLevel().exit.y);
+      };
+
+      Portal.prototype._getDistance = function(portal, p) {
+        var position;
+        position = new Vector(portal.x, portal.y);
+        return this._delta.copy(position).sub(p.pos).mag();
       };
 
       return Portal;
@@ -2232,7 +2390,9 @@
         this.physics.behaviours.push(this.gravity);
         this.initPlayerPhysics(this.gameModel.player, this.gameModel.levelSequence);
         this.portal = new FNT.Portal(this.gameModel.levelSequence, this.gameModel.player, function() {
-          return _this.onPortalCollision();
+          return _this.gameModel.nextLevel();
+        }, function() {
+          return _this.gameModel.startLevel();
         });
         this.physics.behaviours.push(this.portal);
         this.gameModel.addObserver(this);
@@ -2246,10 +2406,6 @@
       PhysicsController.prototype.initPlayerPhysics = function(playerModel, levelSequence) {
         this.player = new FNT.PlayerParticle().create(playerModel, levelSequence, this.keyboard);
         return this.physics.particles.push(this.player);
-      };
-
-      PhysicsController.prototype.onPortalCollision = function() {
-        return this.gameModel.nextLevel();
       };
 
       return PhysicsController;

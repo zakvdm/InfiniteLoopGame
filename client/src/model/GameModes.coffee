@@ -11,6 +11,8 @@ namespace "FNT", (exports) ->
                exit: {x: 300, y: 500}
                ringData: [
                             {x: 500, y: 350, diameter: 650},]
+               portals: [
+                            {type: FNT.Portals.RESPAWN, x: 700, y: 500, diameter: 90}]
                texts: [
                             {text: "this is you", x: 480, y: 630, start: 0, duration: FNT.Time.THREE_SECONDS, size: 18}
                             {text: "this is where you want to go", x: 250, y: 420, start: FNT.Time.ONE_SECOND, duration: FNT.Time.THREE_SECONDS, size: 18}
@@ -35,6 +37,19 @@ namespace "FNT", (exports) ->
                             {x: 700, y: 500, diameter: 570}, ],
                texts: [
                             {text: "HINT: While you're clamped onto a ring, you pass through all other rings!", x: 590, y: 495, start: FNT.Time.ONE_SECOND, duration: FNT.Time.TEN_SECONDS, size: 14} ]
+           }, 
+           {
+               spawnLocation : {x: 80, y: 550},
+               exit: {x: 600, y: 700},
+               ringData : [
+                            {x: 300, y: 400, diameter: 570}
+                            {x: 500, y: 600, diameter: 300}]
+               portals: [
+                            {type: FNT.Portals.RESPAWN, x: 300, y: 700, diameter: 100}
+                            {type: FNT.Portals.RESPAWN, x: 650, y: 200, diameter: 200}
+                            {type: FNT.Portals.RESPAWN, x: 900, y: 500, diameter: 400}]
+               texts: [
+                            {text: "black holes", x: 200, y: 495, start: FNT.Time.ONE_SECOND, duration: FNT.Time.TEN_SECONDS, size: 30} ]
            }, 
            {
                spawnLocation : {x: FNT.Game.MIDDLE.x, y: FNT.Game.HEIGHT - 100},

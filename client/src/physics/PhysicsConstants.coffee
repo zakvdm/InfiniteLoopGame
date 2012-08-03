@@ -20,4 +20,4 @@ namespace "FNT", (exports) ->
     ORBIT_CHANGE_PER_SECOND:     FNT.PlayerConstants.RADIUS / 2
    
     # PORTAL:
-    PORTAL_RADIUS:               42
+    PORTAL_RADIUS:               45

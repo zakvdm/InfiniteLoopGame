@@ -18,20 +18,22 @@ namespace "FNT", (exports) ->
     load: (levelData) ->
       @spawnLocation = levelData.spawnLocation
       @exit = levelData.exit
-      @texts = levelData.texts # All the little bits of text shown for this level (tutorials, level name, etc.)
       
-      @rings = []
+      @_texts = levelData.texts # All the little bits of text shown for this level (tutorials, level name, etc.)
       
-      
-      @rings.push(FNT.RingModelFactory.build(ring)) for ring in levelData.ringData
+      @_rings = []
+      @_rings.push(FNT.RingModelFactory.build(ring)) for ring in levelData.ringData
         
+      @_portals = []
+      if levelData.portals?
+        @_portals.push(FNT.PortalModelFactory.build(portal)) for portal in levelData.portals
       
-    getRings: -> @rings
-    
-    getTexts: -> @texts
+    getRings: -> @_rings
+    getPortals: -> @_portals
+    getTexts: -> @_texts
     
     setOrbited: (orbitedRing) ->
-      for ring in @rings
+      for ring in @_rings
         if ring == orbitedRing
           orbitedRing.state.set(FNT.RingStates.ORBITED)
         else
@@ -39,6 +41,6 @@ namespace "FNT", (exports) ->
       
     
     resetAllRings: ->
-      for ring in @rings
+      for ring in @_rings
         ring.state.set(FNT.RingStates.NORMAL)
     

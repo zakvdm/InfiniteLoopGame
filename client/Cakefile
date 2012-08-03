@@ -13,10 +13,12 @@ files = [
         'Game'
         'Color'
         'Strings'
+        'Portals'
         
         # MODELS:
         'model/ObservableModel'
         'model/GameModes'
+        'model/PortalModel'
         'model/PlayerModel'
         'model/RingModel'
         'model/LevelModel'
@@ -30,7 +32,7 @@ files = [
         'actor/CircleActor'
         'actor/PlayerActor'
         'actor/RingActor'
-        'actor/PortalBorderActor'
+        'actor/PortalActor'
         'actor/LevelActor'
         'actor/LevelSequenceActor'
         'actor/BackgroundContainer'

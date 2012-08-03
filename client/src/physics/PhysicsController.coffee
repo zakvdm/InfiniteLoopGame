@@ -13,7 +13,10 @@ namespace "FNT", (exports) ->
 
       @initPlayerPhysics(@gameModel.player, @gameModel.levelSequence)
       
-      @portal = new FNT.Portal(@gameModel.levelSequence, @gameModel.player, => @onPortalCollision())
+      @portal = new FNT.Portal(@gameModel.levelSequence,
+                               @gameModel.player,
+                               => @gameModel.nextLevel(), # onExit
+                               => @gameModel.startLevel()) # onRespawn
       @physics.behaviours.push(@portal)
       
       @gameModel.addObserver(@)
@@ -26,7 +29,4 @@ namespace "FNT", (exports) ->
       @player = new FNT.PlayerParticle().create(playerModel, levelSequence, @keyboard)
       
       @physics.particles.push(@player)
-      
-    onPortalCollision: ->
-      @gameModel.nextLevel()
       
