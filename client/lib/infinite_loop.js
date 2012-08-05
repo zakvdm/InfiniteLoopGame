@@ -232,14 +232,6 @@
                 diameter: 650
               }
             ],
-            portals: [
-              {
-                type: FNT.Portals.RESPAWN,
-                x: 700,
-                y: 500,
-                diameter: 90
-              }
-            ],
             texts: [
               {
                 text: "this is you",
@@ -1803,6 +1795,33 @@
     })();
   });
 
+  /* Controller responsible for physics
+  */
+
+
+  namespace("FNT", function(exports) {
+    return exports.SoundController = (function() {
+
+      function SoundController() {}
+
+      SoundController.prototype.create = function(gameModel) {
+        var playerSynth;
+        this.gameModel = gameModel;
+        this.audiolet = new Audiolet();
+        playerSynth = new FNT.PlayerSynth(this.audiolet, 440);
+        playerSynth.connect(this.audiolet.output);
+        return this;
+      };
+
+      SoundController.prototype.step = function() {
+        return console.log("Stepping sound controller");
+      };
+
+      return SoundController;
+
+    })();
+  });
+
   namespace("FNT", function(exports) {
     return exports.GameController = (function() {
 
@@ -1984,6 +2003,37 @@
       return Keyboard;
 
     })();
+  });
+
+  /* Controller responsible for physics
+  */
+
+
+  namespace("FNT", function(exports) {
+    return exports.PlayerSynth = (function(_super) {
+
+      __extends(PlayerSynth, _super);
+
+      function PlayerSynth(audiolet, frequency) {
+        var envelope, gain, modulator, modulatorMulAdd, sine;
+        PlayerSynth.__super__.constructor.call(this, audiolet, 0, 1);
+        sine = new Sine(audiolet, frequency);
+        modulator = new Saw(audiolet, 2 * frequency);
+        modulatorMulAdd = new MulAdd(audiolet, frequency / 2, frequency);
+        gain = new Gain(audiolet);
+        envelope = new PercussiveEnvelope(audiolet, 1, 0.2, 0.5, (function() {
+          return audiolet.scheduler.addRelative(0, this.remove.bind(this));
+        }).bind(this));
+        modulator.connect(modulatorMulAdd);
+        modulatorMulAdd.connect(sine);
+        envelope.connect(gain, 0, 1);
+        sine.connect(gain);
+        gain.connect(this.outputs[0]);
+      }
+
+      return PlayerSynth;
+
+    })(AudioletGroup);
   });
 
   namespace("FNT", function(exports) {
@@ -2395,7 +2445,6 @@
           return _this.gameModel.startLevel();
         });
         this.physics.behaviours.push(this.portal);
-        this.gameModel.addObserver(this);
         return this;
       };
 
@@ -2493,13 +2542,40 @@
   namespace("FNT", function(exports) {
     var __FNT__createLoadingScene, __createCanvas, __end_loading;
     __FNT__createLoadingScene = function(director) {
-      var ladingActor, ladingImg, oActor, oImg, scene;
+      var ladingImg, oImg, scene;
       ladingImg = director.getImage('lading');
       oImg = director.getImage('rueda');
       scene = director.createScene();
-      scene.addChild(new CAAT.Actor().setBackgroundImage(director.getImage('splash')));
-      scene.addChild(ladingActor = new CAAT.Actor().setBackgroundImage(ladingImg).setLocation(director.width - ladingImg.width - 10, director.height - ladingImg.height - 30));
-      scene.addChild(oActor = new CAAT.Actor().setBackgroundImage(oImg).setLocation(ladingActor.x + 20, ladingActor.y + 10).addBehavior(new CAAT.RotateBehavior().setValues(0, 2 * Math.PI).setFrameTime(0, FNT.Time.ONE_SECOND).setCycle(true)));
+      /*  
+      scene.addChild(
+        new CAAT.Actor().
+          setBackgroundImage(
+            director.getImage('splash')
+          )
+      )
+        
+      scene.addChild(
+        ladingActor = new CAAT.Actor().
+          setBackgroundImage(ladingImg).
+          setLocation(
+            director.width - ladingImg.width - 10,
+            director.height - ladingImg.height - 30
+          )
+      )
+        
+      scene.addChild(
+        oActor = new CAAT.Actor().
+          setBackgroundImage(oImg).
+          setLocation(ladingActor.x + 20, ladingActor.y + 10).
+          addBehavior(
+            new CAAT.RotateBehavior().
+              setValues(0,2*Math.PI).
+              setFrameTime(0, FNT.Time.ONE_SECOND).
+              setCycle(true)
+            )
+      )
+      */
+
       scene.loadedImage = function(count, images) {
         if (count === images.length) {
           return __end_loading(director, images);
@@ -2524,26 +2600,12 @@
       CAAT.DEBUG = 1;
       director = __createCanvas();
       prefix = typeof __RESOURCE_URL !== "undefined" && __RESOURCE_URL !== null ? __RESOURCE_URL : '';
-      new CAAT.ImagePreloader().loadImages([
-        {
-          id: 'splash',
-          url: prefix + 'splash/splash.jpg'
-        }, {
-          id: 'lading',
-          url: prefix + 'splash/lading.png'
-        }, {
-          id: 'rueda',
-          url: prefix + 'splash/rueda.png'
-        }
-      ], function(counter, images) {
+      new CAAT.ImagePreloader().loadImages([], function(counter, images) {
         var loading_scene;
         if (counter === images.length) {
           director.setImagesCache(images);
           loading_scene = __FNT__createLoadingScene(director);
           return new CAAT.ImagePreloader().loadImages([], function(counter, images) {
-            if (counter === images.length) {
-              director.addAudio("music", prefix + "res/sound/music.mp3");
-            }
             return loading_scene.loadedImage(counter, images);
           });
         }
