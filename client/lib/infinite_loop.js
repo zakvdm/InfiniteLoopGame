@@ -1795,33 +1795,6 @@
     })();
   });
 
-  /* Controller responsible for physics
-  */
-
-
-  namespace("FNT", function(exports) {
-    return exports.SoundController = (function() {
-
-      function SoundController() {}
-
-      SoundController.prototype.create = function(gameModel) {
-        var playerSynth;
-        this.gameModel = gameModel;
-        this.audiolet = new Audiolet();
-        playerSynth = new FNT.PlayerSynth(this.audiolet, 440);
-        playerSynth.connect(this.audiolet.output);
-        return this;
-      };
-
-      SoundController.prototype.step = function() {
-        return console.log("Stepping sound controller");
-      };
-
-      return SoundController;
-
-    })();
-  });
-
   namespace("FNT", function(exports) {
     return exports.GameController = (function() {
 
@@ -2003,37 +1976,6 @@
       return Keyboard;
 
     })();
-  });
-
-  /* Controller responsible for physics
-  */
-
-
-  namespace("FNT", function(exports) {
-    return exports.PlayerSynth = (function(_super) {
-
-      __extends(PlayerSynth, _super);
-
-      function PlayerSynth(audiolet, frequency) {
-        var envelope, gain, modulator, modulatorMulAdd, sine;
-        PlayerSynth.__super__.constructor.call(this, audiolet, 0, 1);
-        sine = new Sine(audiolet, frequency);
-        modulator = new Saw(audiolet, 2 * frequency);
-        modulatorMulAdd = new MulAdd(audiolet, frequency / 2, frequency);
-        gain = new Gain(audiolet);
-        envelope = new PercussiveEnvelope(audiolet, 1, 0.2, 0.5, (function() {
-          return audiolet.scheduler.addRelative(0, this.remove.bind(this));
-        }).bind(this));
-        modulator.connect(modulatorMulAdd);
-        modulatorMulAdd.connect(sine);
-        envelope.connect(gain, 0, 1);
-        sine.connect(gain);
-        gain.connect(this.outputs[0]);
-      }
-
-      return PlayerSynth;
-
-    })(AudioletGroup);
   });
 
   namespace("FNT", function(exports) {
