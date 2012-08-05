@@ -7,7 +7,8 @@ namespace "FNT", (exports) ->
     ladingImg = director.getImage('lading');
     oImg = director.getImage('rueda');
     scene = director.createScene();
-    
+  
+    ###  
     scene.addChild(
       new CAAT.Actor().
         setBackgroundImage(
@@ -35,6 +36,7 @@ namespace "FNT", (exports) ->
             setCycle(true)
           )
     )
+    ###
   
     scene.loadedImage = (count, images) ->
       __end_loading(director, images) if count == images.length
@@ -80,9 +82,9 @@ namespace "FNT", (exports) ->
   
     new CAAT.ImagePreloader().loadImages(
         [
-            {id:'splash',   url: prefix + 'splash/splash.jpg'},
-            {id:'lading',   url: prefix + 'splash/lading.png'},
-            {id:'rueda',    url: prefix + 'splash/rueda.png'}
+            #{id:'splash',   url: prefix + 'splash/splash.jpg'},
+            #{id:'lading',   url: prefix + 'splash/lading.png'},
+            #{id:'rueda',    url: prefix + 'splash/rueda.png'}
         ],
         (counter, images) ->
           if (counter == images.length)
