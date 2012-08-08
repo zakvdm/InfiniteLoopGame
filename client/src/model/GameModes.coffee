@@ -11,8 +11,6 @@ namespace "FNT", (exports) ->
                exit: {x: 300, y: 500}
                ringData: [
                             {x: 500, y: 350, diameter: 650},]
-               portals: [
-                            {type: FNT.Portals.RESPAWN, x: 700, y: 500, diameter: 90}]
                texts: [
                             {text: "this is you", x: 480, y: 630, start: 0, duration: FNT.Time.THREE_SECONDS, size: 18}
                             {text: "this is where you want to go", x: 250, y: 420, start: FNT.Time.ONE_SECOND, duration: FNT.Time.THREE_SECONDS, size: 18}

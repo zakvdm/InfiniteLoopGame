@@ -9,7 +9,7 @@ namespace "FNT", (exports) ->
         # Delta between particle positions.
         @_delta = new Vector()
         @_acceleration = new Vector()
-        @_accumulated_acceleration = new Vector()
+        #@_accumulated_acceleration = new Vector()
         
         @orbit = 0
         
@@ -31,7 +31,7 @@ namespace "FNT", (exports) ->
       if @keyboard.LEFT
         @_acceleration.x -= speed
         
-      @_accumulated_acceleration.add(@_acceleration)
+      #@_accumulated_acceleration.add(@_acceleration)
       
       @adjustOrbitOverTime(p, dt)
       
@@ -74,7 +74,7 @@ namespace "FNT", (exports) ->
         if inner_perimeter - threshold < dist < outer_perimeter + threshold
           # Overlaps!
           @ring = r
-          @_accumulated_acceleration.clear()
+          #@_accumulated_acceleration.clear()
           if dist < @ring.radius # We're inside the ring
             @orbit = @ring.radius - FNT.PhysicsConstants.INITIAL_ORBIT_OFFSET
           else

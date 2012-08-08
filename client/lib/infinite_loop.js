@@ -622,6 +622,8 @@
 
       PlayerModel.prototype.create = function() {
         this.position = new CAAT.Point(0, 0);
+        this.velocity = new CAAT.Point(0, 0);
+        this.speed = 0;
         this.diameter = FNT.PlayerConstants.RADIUS * 2;
         return this;
       };
@@ -629,6 +631,11 @@
       PlayerModel.prototype.setPosition = function(pos) {
         this.position.set(pos.x, pos.y);
         return this.notifyObservers(FNT.PlayerEvents.NEW_POSITION, this);
+      };
+
+      PlayerModel.prototype.setVelocity = function(vel) {
+        this.velocity.set(vel.x, vel.y);
+        return this.speed = vel.mag();
       };
 
       /* Spawn in the given LevelModel at the given spawnLocation
@@ -869,12 +876,6 @@
         this;
 
       }
-
-      GameModel.prototype.step = function() {
-        if (this.physicsController != null) {
-          return this.physicsController.step();
-        }
-      };
 
       GameModel.prototype.handleEvent = function(event) {
         switch (event.data) {
@@ -1796,11 +1797,55 @@
   });
 
   namespace("FNT", function(exports) {
+    return exports.SoundController = (function() {
+
+      function SoundController() {}
+
+      SoundController.prototype.create = function(gameModel, keyboard, VOLUME) {
+        this.gameModel = gameModel;
+        this.keyboard = keyboard;
+        this.VOLUME = VOLUME != null ? VOLUME : 1;
+        this.audiolet = new Audiolet();
+        /*
+              melodyA = new PSequence([262, 294, 330, 349])
+              melodyB = new PSequence([349, 330, 349, 392])
+              melodyC = new PSequence([440, 392, 349, 330])
+              frequencyPattern = new PChoose([melodyA, melodyB, melodyC], Infinity)
+        
+              durationPattern = new PChoose([new PSequence([4, 1, 1, 2]), new PSequence([2, 2, 1, 3]), new PSequence([1, 1, 1, 1])], Infinity)
+        
+              this.audiolet.scheduler.play([frequencyPattern], durationPattern, ((frequency) ->
+                      playerSynth = new FNT.PlayerSynth(@audiolet, frequency)
+                      playerSynth.connect(@audiolet.output)).bind(@))
+        */
+
+        this.playerSynth = new FNT.PlayerSynth(this.audiolet);
+        this.gain = new Gain(this.audiolet);
+        this.playerSynth.connect(this.gain);
+        this.gain.connect(this.audiolet.output);
+        return this;
+      };
+
+      SoundController.prototype.setVolume = function(vol) {
+        this.VOLUME = vol;
+        return this.gain.gain.setValue(this.VOLUME);
+      };
+
+      SoundController.prototype.step = function() {
+        return this.playerSynth.update(this.gameModel.player);
+      };
+
+      return SoundController;
+
+    })();
+  });
+
+  namespace("FNT", function(exports) {
     return exports.GameController = (function() {
 
-      function GameController(gameModel, physicsController, keyboard) {
+      function GameController(controllers, gameModel, keyboard) {
+        this.controllers = controllers;
         this.gameModel = gameModel;
-        this.physicsController = physicsController;
         this.keyboard = keyboard;
         this.registerKeyListeners(this.keyboard);
         this;
@@ -1808,9 +1853,16 @@
       }
 
       GameController.prototype.step = function() {
-        if (this.physicsController != null) {
-          return this.physicsController.step();
+        var controller, _i, _len, _ref, _results;
+        _ref = this.controllers;
+        _results = [];
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          controller = _ref[_i];
+          if (controller != null) {
+            _results.push(controller.step());
+          }
         }
+        return _results;
       };
 
       GameController.prototype.reset = function() {
@@ -1979,6 +2031,131 @@
   });
 
   namespace("FNT", function(exports) {
+    return exports.PlayerSynth = (function(_super) {
+
+      __extends(PlayerSynth, _super);
+
+      PlayerSynth.NORMAL_FREQUENCY = 20;
+
+      PlayerSynth.ORBIT_FREQUENCY = 50;
+
+      PlayerSynth.MAXIMUM_SPEED = 6;
+
+      PlayerSynth.GAIN_DELTA = 0.1;
+
+      PlayerSynth.FREQUENCY_DELTA = 3;
+
+      PlayerSynth.ORBIT_GAIN_FACTOR = 0.5;
+
+      function PlayerSynth(audiolet) {
+        /*
+              super(audiolet, 0, 1) # 0 inputs, 1 output
+              
+              sine = new Sine(audiolet, frequency)
+              modulator = new Saw(audiolet, 2 * frequency)
+              modulatorMulAdd = new MulAdd(audiolet, frequency / 2,
+                                                frequency)
+              gain = new Gain(audiolet)
+              envelope = new PercussiveEnvelope(audiolet, 1, 0.2, 0.5, ( -> audiolet.scheduler.addRelative(0, @.remove.bind(@))).bind(@))
+        
+              modulator.connect(modulatorMulAdd)
+              modulatorMulAdd.connect(sine)
+              envelope.connect(gain, 0, 1);
+              sine.connect(gain)
+              gain.connect(@outputs[0])
+        */
+
+        var frequencyMul, modulator, osc1, osc2, out, sine, whiteNoise;
+        PlayerSynth.__super__.constructor.call(this, audiolet, 0, 1);
+        this.FREQUENCY_MODULATION = 3;
+        whiteNoise = new WhiteNoise(audiolet);
+        this.whiteNoiseScaled = new Multiply(audiolet, this.FREQUENCY_MODULATION);
+        sine = new Sine(this.audiolet, 1);
+        this.mulAdd = new Multiply(this.audiolet, this.FREQUENCY_MODULATION);
+        sine.connect(this.mulAdd);
+        whiteNoise.connect(this.whiteNoiseScaled);
+        modulator = new Add(audiolet);
+        this.mulAdd.connect(modulator, 0, 0);
+        this.whiteNoiseScaled.connect(modulator, 0, 1);
+        this.frequencyNode = new Add(audiolet, FNT.PlayerSynth.NORMAL_FREQUENCY);
+        modulator.connect(this.frequencyNode);
+        frequencyMul = new Multiply(audiolet, 4);
+        osc1 = new Sine(audiolet);
+        osc2 = new Sine(audiolet);
+        this.frequencyNode.connect(osc1);
+        this.frequencyNode.connect(frequencyMul);
+        frequencyMul.connect(osc2);
+        out = new Add(audiolet);
+        osc1.connect(out, 0, 0);
+        osc2.connect(out, 0, 1);
+        this.gain = new Gain(audiolet);
+        out.connect(this.gain);
+        this.gain.connect(this.outputs[0]);
+      }
+
+      PlayerSynth.prototype.setFrequencyModulation = function(frequencyModulation) {
+        this.FREQUENCY_MODULATION = frequencyModulation;
+        this.mulAdd.value.setValue(frequencyModulation);
+        return this.whiteNoiseScaled.value.setValue(frequencyModulation);
+      };
+
+      PlayerSynth.prototype.update = function(player) {
+        var speed;
+        speed = Math.min(player.speed, FNT.PlayerSynth.MAXIMUM_SPEED);
+        switch (player.state.get()) {
+          case FNT.PlayerStates.NORMAL:
+            this.gainTarget = speed / FNT.PlayerSynth.MAXIMUM_SPEED;
+            this.frequencyTarget = FNT.PlayerSynth.NORMAL_FREQUENCY + (speed * 2);
+            break;
+          case FNT.PlayerStates.ORBITING:
+            this.gainTarget = (speed * FNT.PlayerSynth.ORBIT_GAIN_FACTOR) / (FNT.PlayerSynth.MAXIMUM_SPEED * 2);
+            this.frequencyTarget = FNT.PlayerSynth.ORBIT_FREQUENCY + speed;
+            break;
+          default:
+            this.gainTarget = 0;
+            this.frequencyTarget = 0;
+        }
+        return this._step();
+      };
+
+      PlayerSynth.prototype._step = function() {
+        var currentFrequency, currentGain, delta_frequency, delta_gain;
+        if (!(this.frequencyTarget != null) || !(this.gainTarget != null)) {
+          return;
+        }
+        currentFrequency = this.frequencyNode.value.getValue();
+        currentGain = this.gain.gain.getValue();
+        delta_frequency = 0;
+        delta_gain = 0;
+        if (currentFrequency < this.frequencyTarget) {
+          delta_frequency = Math.min(this.frequencyTarget - currentFrequency, FNT.PlayerSynth.FREQUENCY_DELTA);
+        } else {
+          delta_frequency = Math.max(this.frequencyTarget - currentFrequency, -1 * FNT.PlayerSynth.FREQUENCY_DELTA);
+        }
+        if (currentGain < this.gainTarget) {
+          delta_gain = Math.min(this.gainTarget - currentGain, FNT.PlayerSynth.GAIN_DELTA);
+        } else {
+          delta_gain = Math.max(this.gainTarget - currentGain, -1 * FNT.PlayerSynth.GAIN_DELTA);
+        }
+        this._setFrequency(currentFrequency + delta_frequency);
+        return this._setGain(currentGain + delta_gain);
+      };
+
+      PlayerSynth.prototype._setFrequency = function(freq) {
+        this.frequency;
+        return this.frequencyNode.value.setValue(freq);
+      };
+
+      PlayerSynth.prototype._setGain = function(gain) {
+        return this.gain.gain.setValue(gain);
+      };
+
+      return PlayerSynth;
+
+    })(AudioletGroup);
+  });
+
+  namespace("FNT", function(exports) {
     return exports.PhysicsConstants = {
       GRAVITY: new Vector(0, 250.0),
       MOVE_SPEED: 200,
@@ -2005,10 +2182,13 @@
 
       function CouplePosition(target) {
         this.target = target;
-        CouplePosition.__super__.constructor.apply(this, arguments);
+        CouplePosition.__super__.constructor.call(this);
+        this._velocity = new Vector();
       }
 
       CouplePosition.prototype.apply = function(p, dt, index) {
+        this._velocity.copy(p.pos).sub(this.target.position);
+        this.target.setVelocity(this._velocity);
         return this.target.setPosition(p.pos);
       };
 
@@ -2123,7 +2303,6 @@
         this.callback = callback != null ? callback : null;
         this._delta = new Vector();
         this._acceleration = new Vector();
-        this._accumulated_acceleration = new Vector();
         this.orbit = 0;
         this.TRACKING_FACTOR = 1.0;
         Orbiter.__super__.constructor.apply(this, arguments);
@@ -2146,7 +2325,6 @@
         if (this.keyboard.LEFT) {
           this._acceleration.x -= speed;
         }
-        this._accumulated_acceleration.add(this._acceleration);
         this.adjustOrbitOverTime(p, dt);
         return p.acc.add(this._acceleration);
       };
@@ -2196,7 +2374,6 @@
           threshold = FNT.PhysicsConstants.ORBIT_ATTACH_THRESHOLD;
           if ((inner_perimeter - threshold < dist && dist < outer_perimeter + threshold)) {
             this.ring = r;
-            this._accumulated_acceleration.clear();
             if (dist < this.ring.radius) {
               this.orbit = this.ring.radius - FNT.PhysicsConstants.INITIAL_ORBIT_OFFSET;
             } else {
@@ -2327,6 +2504,17 @@
         return this;
       };
 
+      /* Overrides the Particle 'update' method. Only applies update if the Player is not dead.
+      */
+
+
+      PlayerParticle.prototype.update = function(dt, index) {
+        if (this.playerModel.state.get() === FNT.PlayerStates.DEAD) {
+          return;
+        }
+        return PlayerParticle.__super__.update.call(this, dt, index);
+      };
+
       PlayerParticle.prototype.setOrbitState = function(isOrbiting) {
         this.clearState();
         this.orbiter.setActive(isOrbiting);
@@ -2413,22 +2601,23 @@
         var gameController, gameModel;
         gameModel = this.createGameModel();
         gameController = this.createGameController(gameModel);
-        this.createDatGui();
+        this.createDatGui(gameModel);
         return this.createGameView(director, gameModel, gameController);
       };
 
       GameFactory.createGameModel = function() {
-        var playerModel;
-        this.levelSequence = FNT.LevelSequenceFactory.build(FNT.GameModes.quest.levelData);
+        var levelSequence, playerModel;
+        levelSequence = FNT.LevelSequenceFactory.build(FNT.GameModes.quest.levelData);
         playerModel = FNT.PlayerFactory.build();
-        return new FNT.GameModel(this.levelSequence, playerModel);
+        return new FNT.GameModel(levelSequence, playerModel);
       };
 
       GameFactory.createGameController = function(gameModel) {
         var keyboard, physics;
         keyboard = new FNT.Keyboard().create();
         physics = new FNT.PhysicsController().create(gameModel, keyboard);
-        return new FNT.GameController(gameModel, physics, keyboard);
+        this.sound = new FNT.SoundController().create(gameModel, keyboard);
+        return new FNT.GameController([physics, this.sound], gameModel, keyboard);
       };
 
       GameFactory.createGameView = function(director, gameModel, gameController) {
@@ -2436,8 +2625,8 @@
         return gameScene = FNT.GameSceneActorFactory.build(director, gameModel, gameController);
       };
 
-      GameFactory.createDatGui = function() {
-        var gui, levelController, levelFolder, physicsFolder,
+      GameFactory.createDatGui = function(gameModel) {
+        var freqModulator, gui, levelController, levelFolder, physicsFolder, playerFolder, soundController, soundFolder,
           _this = this;
         gui = new dat.GUI();
         physicsFolder = gui.addFolder('Physics');
@@ -2448,10 +2637,28 @@
         physicsFolder.add(FNT.PhysicsConstants, 'ORBIT_ATTACH_THRESHOLD', 0, 20);
         physicsFolder.add(FNT.PhysicsConstants, 'PORTAL_RADIUS', 0, 100);
         levelFolder = gui.addFolder('Level');
-        levelController = levelFolder.add(this.levelSequence, "_currentIndex", 0, this.levelSequence._levels.length - 1).step(1).listen();
-        return levelController.onFinishChange(function(value) {
-          return _this.levelSequence.skipToLevel(value);
+        levelController = levelFolder.add(gameModel.levelSequence, "_currentIndex", 0, gameModel.levelSequence._levels.length - 1).step(1).listen();
+        levelController.onFinishChange(function(value) {
+          return gameModel.levelSequence.skipToLevel(value);
         });
+        playerFolder = gui.addFolder('Player');
+        playerFolder.add(gameModel.player.position, "x").listen();
+        playerFolder.add(gameModel.player.position, "y").listen();
+        playerFolder.add(gameModel.player, "speed").listen();
+        soundFolder = gui.addFolder('Sound');
+        soundController = soundFolder.add(this.sound, "VOLUME", 0, 1).step(0.1).listen();
+        soundController.onFinishChange(function(volume) {
+          return _this.sound.setVolume(volume);
+        });
+        freqModulator = soundFolder.add(this.sound.playerSynth, "FREQUENCY_MODULATION", 0, 50).step(1).listen();
+        freqModulator.onFinishChange(function(modulation) {
+          return _this.sound.playerSynth.setFrequencyModulation(modulation);
+        });
+        soundFolder.add(FNT.PlayerSynth, "NORMAL_FREQUENCY", 10, 400);
+        soundFolder.add(FNT.PlayerSynth, "ORBIT_FREQUENCY", 10, 500);
+        soundFolder.add(FNT.PlayerSynth, "MAXIMUM_SPEED", 0, 12).step(1);
+        soundFolder.add(FNT.PlayerSynth, "GAIN_DELTA", 0, 1).step(0.005);
+        return soundFolder.add(FNT.PlayerSynth, "FREQUENCY_DELTA", 0, 50).step(1);
       };
 
       return GameFactory;

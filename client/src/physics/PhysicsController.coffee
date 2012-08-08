@@ -19,7 +19,6 @@ namespace "FNT", (exports) ->
                                => @gameModel.startLevel()) # onRespawn
       @physics.behaviours.push(@portal)
       
-      @gameModel.addObserver(@)
       @
 
     step: ->

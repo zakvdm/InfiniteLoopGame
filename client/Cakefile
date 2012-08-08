@@ -47,10 +47,14 @@ files = [
         'UI/MenuActor'
         
         # CONTROLLERS:
+        'controller/SoundController'
         'controller/GameController'
         
         # INPUT:
         'input/Keyboard'
+        
+        # SOUND:
+        'sound/PlayerSynth'
         
         # PHYSICS:
         'physics/PhysicsConstants'

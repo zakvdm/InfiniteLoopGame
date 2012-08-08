@@ -32,6 +32,8 @@ namespace "FNT", (exports) ->
     
     create: ->
       @position = new CAAT.Point(0, 0)
+      @velocity = new CAAT.Point(0, 0)
+      @speed = 0
       @diameter = FNT.PlayerConstants.RADIUS * 2
       
       @
@@ -39,6 +41,10 @@ namespace "FNT", (exports) ->
     setPosition: (pos) ->
       @position.set(pos.x, pos.y)
       @notifyObservers(FNT.PlayerEvents.NEW_POSITION, @)
+      
+    setVelocity: (vel) ->
+      @velocity.set(vel.x, vel.y)
+      @speed = vel.mag()
       
     ### Spawn in the given LevelModel at the given spawnLocation ### 
     spawn: (spawnLocation) ->

@@ -96,9 +96,8 @@ namespace "FNT", (exports) ->
                     #{id:'target-number',    url: prefix + 'res/img/target.png'}
                 ],
                 (counter, images) ->
-                  if (counter == images.length)
-                    director.
-                      addAudio("music", prefix + "res/sound/music.mp3")
+                  #if (counter == images.length)
+                    #director.addAudio("music", prefix + "res/sound/music.mp3")
   
                   loading_scene.loadedImage(counter, images);
             )

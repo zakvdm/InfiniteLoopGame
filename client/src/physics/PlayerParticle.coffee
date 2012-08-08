@@ -28,6 +28,12 @@ namespace "FNT", (exports) ->
       @playerModel.addObserver(this)
       @
       
+    ### Overrides the Particle 'update' method. Only applies update if the Player is not dead. ###
+    update: (dt, index) ->
+        if @playerModel.state.get() is FNT.PlayerStates.DEAD then return
+    
+        super(dt, index)
+
     setOrbitState: (isOrbiting) ->
       @clearState() # Always start in the normal state, and the behaviours can change the state as appropriate
       

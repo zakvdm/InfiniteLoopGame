@@ -5,8 +5,12 @@ namespace "FNT", (exports) ->
   class exports.CouplePosition extends Behaviour
   
       constructor: (@target) ->
-        super
+        super()
+        
+        @_velocity = new Vector()
   
       apply: (p, dt, index) ->
+        @_velocity.copy(p.pos).sub(@target.position)
+        @target.setVelocity(@_velocity)
         @target.setPosition(p.pos)
   
