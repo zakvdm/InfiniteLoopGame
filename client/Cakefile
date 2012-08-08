@@ -55,6 +55,7 @@ files = [
         
         # SOUND:
         'sound/PlayerSynth'
+        'sound/BellSynth'
         
         # PHYSICS:
         'physics/PhysicsConstants'

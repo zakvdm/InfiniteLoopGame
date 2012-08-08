@@ -3,7 +3,7 @@ namespace "FNT", (exports) ->
 
   class exports.PlayerSynth extends AudioletGroup
   
-    @NORMAL_FREQUENCY = 20
+    @NORMAL_FREQUENCY = 40
     @ORBIT_FREQUENCY = 50
     @MAXIMUM_SPEED = 6
     @GAIN_DELTA = 0.1
@@ -34,24 +34,18 @@ namespace "FNT", (exports) ->
       super(audiolet, 0, 1) # 0 inputs, 1 outputs
       
       @FREQUENCY_MODULATION = 3
+      @raw_speed = 0
       
-      whiteNoise = new WhiteNoise(audiolet)
-      @whiteNoiseScaled = new Multiply(audiolet, @FREQUENCY_MODULATION)
       # Oscillate frequency between 20hz and 40hz every second
       sine = new Sine(@audiolet, 1) # 1hz LFO frequency
-      @mulAdd = new Multiply(@audiolet, @FREQUENCY_MODULATION) # Scale -1 to 1 -> -FREQUENCY_MODULATION to FREQUENCY_MODULATION
+      @frequencyModulator = new Multiply(@audiolet, @FREQUENCY_MODULATION) # Scale -1 to 1 -> -FREQUENCY_MODULATION to FREQUENCY_MODULATION
       
-      sine.connect(@mulAdd)
-      whiteNoise.connect(@whiteNoiseScaled)
+      sine.connect(@frequencyModulator)
 
-      modulator = new Add(audiolet)
-      @mulAdd.connect(modulator, 0, 0)
-      @whiteNoiseScaled.connect(modulator, 0, 1)
-      
       @frequencyNode = new Add(audiolet, FNT.PlayerSynth.NORMAL_FREQUENCY)
-      modulator.connect(@frequencyNode)
+      @frequencyModulator.connect(@frequencyNode)
       
-      frequencyMul = new Multiply(audiolet, 4)
+      frequencyMul = new Multiply(audiolet, 2)
 
       osc1 = new Sine(audiolet)
       osc2 = new Sine(audiolet)
@@ -66,28 +60,57 @@ namespace "FNT", (exports) ->
       osc2.connect(out, 0, 1)
       
       @gain = new Gain(audiolet)
+      #@envelope = new PercussiveEnvelope(audiolet, 0, 0.2, 0.5) # Audiolet, Gate, Attack, Release
+      @envelope = new ADSREnvelope(audiolet,
+                                    0, # Gate
+                                    0.3, # Attack
+                                    0.1, # Decay
+                                    0.4, # Sustain
+                                    0.3) # Release
       out.connect(@gain)
+      @envelope.connect(@gain, 0, 1);
 
       @gain.connect(@outputs[0])
       
+      @lastPlayerState = FNT.PlayerStates.DEAD
+      
+      
     setFrequencyModulation: (frequencyModulation) ->
       @FREQUENCY_MODULATION = frequencyModulation
-      @mulAdd.value.setValue(frequencyModulation)
-      @whiteNoiseScaled.value.setValue(frequencyModulation)
+      @frequencyModulator.value.setValue(frequencyModulation)
     
     update: (player) ->
-      speed = Math.min(player.speed, FNT.PlayerSynth.MAXIMUM_SPEED)
+      if player.state.get() == @lastPlayerState then return
+      
+      @lastPlayerState = player.state.get()
+      
+      if @lastPlayerState == FNT.PlayerStates.ORBITING
+        @envelope.gate.setValue(1)
+      else
+        @envelope.gate.setValue(0)
+      
+      
+    update_old: (player) ->
+      delta_speed = Math.abs(player.speed - @raw_speed)
+      @raw_speed = player.speed
+      
+      speed = Math.min(@raw_speed, FNT.PlayerSynth.MAXIMUM_SPEED)
+      
+      @gainTarget = Math.min(0.2, delta_speed) * 5
       
       switch player.state.get()
         when FNT.PlayerStates.NORMAL
-          @gainTarget = speed / FNT.PlayerSynth.MAXIMUM_SPEED
+          #@gainTarget = speed / FNT.PlayerSynth.MAXIMUM_SPEED
           @frequencyTarget = FNT.PlayerSynth.NORMAL_FREQUENCY + (speed * 2)
         when FNT.PlayerStates.ORBITING
-          @gainTarget = (speed * FNT.PlayerSynth.ORBIT_GAIN_FACTOR) / (FNT.PlayerSynth.MAXIMUM_SPEED * 2)
+          #@gainTarget = (speed * FNT.PlayerSynth.ORBIT_GAIN_FACTOR) / (FNT.PlayerSynth.MAXIMUM_SPEED * 2)
+          @gainTarget = @gainTarget * FNT.PlayerSynth.ORBIT_GAIN_FACTOR
           @frequencyTarget = FNT.PlayerSynth.ORBIT_FREQUENCY + speed
         else
           @gainTarget = 0
           @frequencyTarget = 0
+          
+      #@gainTarget = @gainTarget * gain_factor
           
       @_step()
       

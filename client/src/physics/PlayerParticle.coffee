@@ -41,7 +41,7 @@ namespace "FNT", (exports) ->
       @levelCollision.setActive(not isOrbiting)
 
     clearState: ->
-      @playerModel.state.set(FNT.PlayerStates.NORMAL)
+      @playerModel.state.set(FNT.PlayerStates.NORMAL) if @playerModel.state.get() != FNT.PlayerStates.DEAD # Dead requires an explicit respawn
       @levelSequence.currentLevel().resetAllRings()
 
     handleEvent: (event) ->

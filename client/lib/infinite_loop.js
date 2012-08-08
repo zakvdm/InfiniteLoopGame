@@ -1802,6 +1802,7 @@
       function SoundController() {}
 
       SoundController.prototype.create = function(gameModel, keyboard, VOLUME) {
+        var out;
         this.gameModel = gameModel;
         this.keyboard = keyboard;
         this.VOLUME = VOLUME != null ? VOLUME : 1;
@@ -1820,8 +1821,12 @@
         */
 
         this.playerSynth = new FNT.PlayerSynth(this.audiolet);
+        this.bellSynth = new FNT.BellSynth(this.audiolet, this.gameModel.levelSequence);
+        out = new Add(this.audiolet);
+        this.playerSynth.connect(out, 0, 0);
+        this.bellSynth.connect(out, 0, 1);
         this.gain = new Gain(this.audiolet);
-        this.playerSynth.connect(this.gain);
+        out.connect(this.gain);
         this.gain.connect(this.audiolet.output);
         return this;
       };
@@ -1832,7 +1837,8 @@
       };
 
       SoundController.prototype.step = function() {
-        return this.playerSynth.update(this.gameModel.player);
+        this.playerSynth.update(this.gameModel.player);
+        return this.bellSynth.update();
       };
 
       return SoundController;
@@ -2035,7 +2041,7 @@
 
       __extends(PlayerSynth, _super);
 
-      PlayerSynth.NORMAL_FREQUENCY = 20;
+      PlayerSynth.NORMAL_FREQUENCY = 40;
 
       PlayerSynth.ORBIT_FREQUENCY = 50;
 
@@ -2065,21 +2071,16 @@
               gain.connect(@outputs[0])
         */
 
-        var frequencyMul, modulator, osc1, osc2, out, sine, whiteNoise;
+        var frequencyMul, osc1, osc2, out, sine;
         PlayerSynth.__super__.constructor.call(this, audiolet, 0, 1);
         this.FREQUENCY_MODULATION = 3;
-        whiteNoise = new WhiteNoise(audiolet);
-        this.whiteNoiseScaled = new Multiply(audiolet, this.FREQUENCY_MODULATION);
+        this.raw_speed = 0;
         sine = new Sine(this.audiolet, 1);
-        this.mulAdd = new Multiply(this.audiolet, this.FREQUENCY_MODULATION);
-        sine.connect(this.mulAdd);
-        whiteNoise.connect(this.whiteNoiseScaled);
-        modulator = new Add(audiolet);
-        this.mulAdd.connect(modulator, 0, 0);
-        this.whiteNoiseScaled.connect(modulator, 0, 1);
+        this.frequencyModulator = new Multiply(this.audiolet, this.FREQUENCY_MODULATION);
+        sine.connect(this.frequencyModulator);
         this.frequencyNode = new Add(audiolet, FNT.PlayerSynth.NORMAL_FREQUENCY);
-        modulator.connect(this.frequencyNode);
-        frequencyMul = new Multiply(audiolet, 4);
+        this.frequencyModulator.connect(this.frequencyNode);
+        frequencyMul = new Multiply(audiolet, 2);
         osc1 = new Sine(audiolet);
         osc2 = new Sine(audiolet);
         this.frequencyNode.connect(osc1);
@@ -2089,26 +2090,42 @@
         osc1.connect(out, 0, 0);
         osc2.connect(out, 0, 1);
         this.gain = new Gain(audiolet);
+        this.envelope = new ADSREnvelope(audiolet, 0, 0.3, 0.1, 0.4, 0.3);
         out.connect(this.gain);
+        this.envelope.connect(this.gain, 0, 1);
         this.gain.connect(this.outputs[0]);
+        this.lastPlayerState = FNT.PlayerStates.DEAD;
       }
 
       PlayerSynth.prototype.setFrequencyModulation = function(frequencyModulation) {
         this.FREQUENCY_MODULATION = frequencyModulation;
-        this.mulAdd.value.setValue(frequencyModulation);
-        return this.whiteNoiseScaled.value.setValue(frequencyModulation);
+        return this.frequencyModulator.value.setValue(frequencyModulation);
       };
 
       PlayerSynth.prototype.update = function(player) {
-        var speed;
-        speed = Math.min(player.speed, FNT.PlayerSynth.MAXIMUM_SPEED);
+        if (player.state.get() === this.lastPlayerState) {
+          return;
+        }
+        this.lastPlayerState = player.state.get();
+        if (this.lastPlayerState === FNT.PlayerStates.ORBITING) {
+          return this.envelope.gate.setValue(1);
+        } else {
+          return this.envelope.gate.setValue(0);
+        }
+      };
+
+      PlayerSynth.prototype.update_old = function(player) {
+        var delta_speed, speed;
+        delta_speed = Math.abs(player.speed - this.raw_speed);
+        this.raw_speed = player.speed;
+        speed = Math.min(this.raw_speed, FNT.PlayerSynth.MAXIMUM_SPEED);
+        this.gainTarget = Math.min(0.2, delta_speed) * 5;
         switch (player.state.get()) {
           case FNT.PlayerStates.NORMAL:
-            this.gainTarget = speed / FNT.PlayerSynth.MAXIMUM_SPEED;
             this.frequencyTarget = FNT.PlayerSynth.NORMAL_FREQUENCY + (speed * 2);
             break;
           case FNT.PlayerStates.ORBITING:
-            this.gainTarget = (speed * FNT.PlayerSynth.ORBIT_GAIN_FACTOR) / (FNT.PlayerSynth.MAXIMUM_SPEED * 2);
+            this.gainTarget = this.gainTarget * FNT.PlayerSynth.ORBIT_GAIN_FACTOR;
             this.frequencyTarget = FNT.PlayerSynth.ORBIT_FREQUENCY + speed;
             break;
           default:
@@ -2151,6 +2168,113 @@
       };
 
       return PlayerSynth;
+
+    })(AudioletGroup);
+  });
+
+  namespace("FNT", function(exports) {
+    var Bell, Bells;
+    Bells = (function() {
+
+      function Bells() {}
+
+      Bells.LITTLE_BELL_GAIN = 0.2;
+
+      Bells.BIG_BELL_GAIN = 0.5;
+
+      Bells.LITTLE_BELL_TIME = 1.0;
+
+      Bells.BIG_BELL_TIME = 3.0;
+
+      return Bells;
+
+    })();
+    Bell = (function(_super) {
+
+      __extends(Bell, _super);
+
+      function Bell(audiolet, frequency, sustainLevel, time, gain) {
+        var modulator, out, sine, triangle;
+        Bell.__super__.constructor.call(this, audiolet, 0, 1);
+        sine = new Sine(audiolet, frequency);
+        triangle = new Triangle(audiolet, frequency * 1.4);
+        this.envelope = new ADSREnvelope(audiolet, 0, 0.1, 0.1, sustainLevel, time);
+        modulator = new MulAdd(audiolet, frequency, frequency);
+        triangle.connect(modulator);
+        modulator.connect(sine);
+        out = new Gain(audiolet);
+        sine.connect(out);
+        this.envelope.connect(out, 0, 1);
+        out.gain.setValue(gain);
+        out.connect(this.outputs[0]);
+        this;
+
+      }
+
+      Bell.prototype.start = function() {
+        return this.envelope.gate.setValue(1);
+      };
+
+      Bell.prototype.stop = function() {
+        return this.envelope.gate.setValue(0);
+      };
+
+      return Bell;
+
+    })(AudioletGroup);
+    return exports.BellSynth = (function(_super) {
+
+      __extends(BellSynth, _super);
+
+      function BellSynth(audiolet, levelSequence, frequency) {
+        var out, reverb;
+        this.audiolet = audiolet;
+        this.levelSequence = levelSequence;
+        this.frequency = frequency != null ? frequency : 440;
+        BellSynth.__super__.constructor.call(this, audiolet, 0, 1);
+        this.levelSequence.addObserver(this);
+        this.ticks = 0;
+        this.SUSTAIN_TIME = 20;
+        /*
+               Now let's initialize the effects.
+               Note that the regular oscillator is twice the frequency,
+               and our modulating oscillator is 1.4x that.
+        */
+
+        this._littleBell = new Bell(this.audiolet, this.frequency, Bells.LITTLE_BELL_GAIN, Bells.LITTLE_BELL_TIME, Bells.LITTLE_BELL_GAIN);
+        this._bigBell = new Bell(this.audiolet, this.frequency * 2, Bells.BIG_BELL_GAIN, Bells.BIG_BELL_TIME, Bells.BIG_BELL_GAIN);
+        out = new Add(this.audiolet);
+        this._littleBell.connect(out);
+        this._bigBell.connect(out);
+        reverb = new Reverb(this.audiolet);
+        out.connect(reverb);
+        reverb.connect(this.outputs[0]);
+      }
+
+      BellSynth.prototype.handleEvent = function(event) {
+        switch (event.data) {
+          case FNT.LevelSequenceStates.PLAYING:
+            return this._playBell(this._littleBell);
+          case FNT.LevelSequenceStates.ADVANCING:
+            return this._playBell(this._bigBell);
+        }
+      };
+
+      BellSynth.prototype.update = function() {
+        this.ticks += 1;
+        if (this.ticks >= this.SUSTAIN_TIME) {
+          this.ticks = 0;
+          this._littleBell.stop();
+          return this._bigBell.stop();
+        }
+      };
+
+      BellSynth.prototype._playBell = function(bell) {
+        this.ticks = 0;
+        return bell.start();
+      };
+
+      return BellSynth;
 
     })(AudioletGroup);
   });
@@ -2522,7 +2646,9 @@
       };
 
       PlayerParticle.prototype.clearState = function() {
-        this.playerModel.state.set(FNT.PlayerStates.NORMAL);
+        if (this.playerModel.state.get() !== FNT.PlayerStates.DEAD) {
+          this.playerModel.state.set(FNT.PlayerStates.NORMAL);
+        }
         return this.levelSequence.currentLevel().resetAllRings();
       };
 

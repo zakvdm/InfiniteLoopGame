@@ -20,9 +20,14 @@ namespace "FNT", (exports) ->
       
       ###
       @playerSynth = new FNT.PlayerSynth(@audiolet)
+      @bellSynth = new FNT.BellSynth(@audiolet, @gameModel.levelSequence)
+      
+      out = new Add(@audiolet)
+      @playerSynth.connect(out, 0, 0)
+      @bellSynth.connect(out, 0, 1)
       
       @gain = new Gain(@audiolet)
-      @playerSynth.connect(@gain)
+      out.connect(@gain)
 
       @gain.connect(@audiolet.output)
   
@@ -35,4 +40,5 @@ namespace "FNT", (exports) ->
 
     step: ->
       @playerSynth.update(@gameModel.player)
+      @bellSynth.update()
       
