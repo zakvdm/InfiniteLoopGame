@@ -2,10 +2,10 @@
 namespace "FNT", (exports) ->
 
   class Bells
-    @LITTLE_BELL_GAIN = 0.2
-    @BIG_BELL_GAIN = 0.5
-    @LITTLE_BELL_TIME = 1.0
-    @BIG_BELL_TIME = 3.0
+    @LITTLE_BELL_GAIN = 0.15
+    @BIG_BELL_GAIN = 0.35
+    @LITTLE_BELL_TIME = 0.5
+    @BIG_BELL_TIME = 1.0
   
   class Bell extends AudioletGroup
     constructor: (audiolet, frequency, sustainLevel, time, gain) ->

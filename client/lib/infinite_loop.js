@@ -1807,19 +1807,6 @@
         this.keyboard = keyboard;
         this.VOLUME = VOLUME != null ? VOLUME : 1;
         this.audiolet = new Audiolet();
-        /*
-              melodyA = new PSequence([262, 294, 330, 349])
-              melodyB = new PSequence([349, 330, 349, 392])
-              melodyC = new PSequence([440, 392, 349, 330])
-              frequencyPattern = new PChoose([melodyA, melodyB, melodyC], Infinity)
-        
-              durationPattern = new PChoose([new PSequence([4, 1, 1, 2]), new PSequence([2, 2, 1, 3]), new PSequence([1, 1, 1, 1])], Infinity)
-        
-              this.audiolet.scheduler.play([frequencyPattern], durationPattern, ((frequency) ->
-                      playerSynth = new FNT.PlayerSynth(@audiolet, frequency)
-                      playerSynth.connect(@audiolet.output)).bind(@))
-        */
-
         this.playerSynth = new FNT.PlayerSynth(this.audiolet);
         this.bellSynth = new FNT.BellSynth(this.audiolet, this.gameModel.levelSequence);
         out = new Add(this.audiolet);
@@ -2037,42 +2024,117 @@
   });
 
   namespace("FNT", function(exports) {
-    return exports.PlayerSynth = (function(_super) {
+    var Hummer;
+    Hummer = (function(_super) {
+
+      __extends(Hummer, _super);
+
+      Hummer.NORMAL_FREQUENCY = 40;
+
+      Hummer.ORBIT_FREQUENCY = 50;
+
+      Hummer.MAXIMUM_SPEED = 6;
+
+      Hummer.GAIN_DELTA = 0.1;
+
+      Hummer.FREQUENCY_DELTA = 3;
+
+      Hummer.ORBIT_GAIN_FACTOR = 0.5;
+
+      function Hummer(audiolet, gainLevel) {
+        var frequencyMul, osc1, osc2, out, sine;
+        Hummer.__super__.constructor.call(this, audiolet, 0, 1);
+        this.FREQUENCY_MODULATION = 3;
+        this.raw_speed = 0;
+        sine = new Sine(this.audiolet, 1);
+        this.frequencyModulator = new Multiply(this.audiolet, this.FREQUENCY_MODULATION);
+        sine.connect(this.frequencyModulator);
+        this.frequencyNode = new Add(audiolet, Hummer.NORMAL_FREQUENCY);
+        this.frequencyModulator.connect(this.frequencyNode);
+        frequencyMul = new Multiply(audiolet, 2);
+        osc1 = new Sine(audiolet);
+        osc2 = new Sine(audiolet);
+        this.frequencyNode.connect(osc1);
+        this.frequencyNode.connect(frequencyMul);
+        frequencyMul.connect(osc2);
+        out = new Add(audiolet);
+        osc1.connect(out, 0, 0);
+        osc2.connect(out, 0, 1);
+        this.gain = new Gain(audiolet, gainLevel);
+        this.envelope = new ADSREnvelope(audiolet, 0, 0.3, 0.1, 0.4, 0.3);
+        out.connect(this.gain);
+        this.envelope.connect(this.gain, 0, 1);
+        this.gain.connect(this.outputs[0]);
+      }
+
+      Hummer.prototype.start = function() {
+        return this.envelope.gate.setValue(1);
+      };
+
+      Hummer.prototype.stop = function() {
+        return this.envelope.gate.setValue(0);
+      };
+
+      return Hummer;
+
+    })(AudioletGroup);
+    exports.PlayerSynth = (function(_super) {
 
       __extends(PlayerSynth, _super);
 
-      PlayerSynth.NORMAL_FREQUENCY = 40;
-
-      PlayerSynth.ORBIT_FREQUENCY = 50;
-
-      PlayerSynth.MAXIMUM_SPEED = 6;
-
-      PlayerSynth.GAIN_DELTA = 0.1;
-
-      PlayerSynth.FREQUENCY_DELTA = 3;
-
-      PlayerSynth.ORBIT_GAIN_FACTOR = 0.5;
-
       function PlayerSynth(audiolet) {
-        /*
-              super(audiolet, 0, 1) # 0 inputs, 1 output
-              
-              sine = new Sine(audiolet, frequency)
-              modulator = new Saw(audiolet, 2 * frequency)
-              modulatorMulAdd = new MulAdd(audiolet, frequency / 2,
-                                                frequency)
-              gain = new Gain(audiolet)
-              envelope = new PercussiveEnvelope(audiolet, 1, 0.2, 0.5, ( -> audiolet.scheduler.addRelative(0, @.remove.bind(@))).bind(@))
-        
-              modulator.connect(modulatorMulAdd)
-              modulatorMulAdd.connect(sine)
-              envelope.connect(gain, 0, 1);
-              sine.connect(gain)
-              gain.connect(@outputs[0])
-        */
-
-        var frequencyMul, osc1, osc2, out, sine;
+        var out, reverb;
         PlayerSynth.__super__.constructor.call(this, audiolet, 0, 1);
+        this._orbitHummer = new Hummer(this.audiolet);
+        this._inputHummer = new Hummer(this.audiolet);
+        out = new Add(this.audiolet);
+        this._orbitHummer.connect(out);
+        this._inputHummer.connect(out);
+        reverb = new Reverb(this.audiolet);
+        out.connect(reverb);
+        reverb.connect(this.outputs[0]);
+        this.lastPlayerState = FNT.PlayerStates.DEAD;
+      }
+
+      PlayerSynth.prototype.setFrequencyModulation = function(frequencyModulation) {
+        this._orbitHummer.setFrequencyModulation(frequencyModulation);
+        return this._inputHummer.setFrequencyModulation(frequencyModulation);
+      };
+
+      PlayerSynth.prototype.update = function(player) {
+        if (player.state.get() === this.lastPlayerState) {
+          return;
+        }
+        this.lastPlayerState = player.state.get();
+        if (this.lastPlayerState === FNT.PlayerStates.ORBITING) {
+          return this._orbitHummer.start();
+        } else {
+          return this._orbitHummer.stop();
+        }
+      };
+
+      return PlayerSynth;
+
+    })(AudioletGroup);
+    return exports.PlayerSynth2 = (function(_super) {
+
+      __extends(PlayerSynth2, _super);
+
+      PlayerSynth2.NORMAL_FREQUENCY = 40;
+
+      PlayerSynth2.ORBIT_FREQUENCY = 50;
+
+      PlayerSynth2.MAXIMUM_SPEED = 6;
+
+      PlayerSynth2.GAIN_DELTA = 0.1;
+
+      PlayerSynth2.FREQUENCY_DELTA = 3;
+
+      PlayerSynth2.ORBIT_GAIN_FACTOR = 0.5;
+
+      function PlayerSynth2(audiolet) {
+        var frequencyMul, osc1, osc2, out, sine;
+        PlayerSynth2.__super__.constructor.call(this, audiolet, 0, 1);
         this.FREQUENCY_MODULATION = 3;
         this.raw_speed = 0;
         sine = new Sine(this.audiolet, 1);
@@ -2097,12 +2159,12 @@
         this.lastPlayerState = FNT.PlayerStates.DEAD;
       }
 
-      PlayerSynth.prototype.setFrequencyModulation = function(frequencyModulation) {
+      PlayerSynth2.prototype.setFrequencyModulation = function(frequencyModulation) {
         this.FREQUENCY_MODULATION = frequencyModulation;
         return this.frequencyModulator.value.setValue(frequencyModulation);
       };
 
-      PlayerSynth.prototype.update = function(player) {
+      PlayerSynth2.prototype.update = function(player) {
         if (player.state.get() === this.lastPlayerState) {
           return;
         }
@@ -2114,7 +2176,7 @@
         }
       };
 
-      PlayerSynth.prototype.update_old = function(player) {
+      PlayerSynth2.prototype.update_old = function(player) {
         var delta_speed, speed;
         delta_speed = Math.abs(player.speed - this.raw_speed);
         this.raw_speed = player.speed;
@@ -2135,7 +2197,7 @@
         return this._step();
       };
 
-      PlayerSynth.prototype._step = function() {
+      PlayerSynth2.prototype._step = function() {
         var currentFrequency, currentGain, delta_frequency, delta_gain;
         if (!(this.frequencyTarget != null) || !(this.gainTarget != null)) {
           return;
@@ -2158,16 +2220,16 @@
         return this._setGain(currentGain + delta_gain);
       };
 
-      PlayerSynth.prototype._setFrequency = function(freq) {
+      PlayerSynth2.prototype._setFrequency = function(freq) {
         this.frequency;
         return this.frequencyNode.value.setValue(freq);
       };
 
-      PlayerSynth.prototype._setGain = function(gain) {
+      PlayerSynth2.prototype._setGain = function(gain) {
         return this.gain.gain.setValue(gain);
       };
 
-      return PlayerSynth;
+      return PlayerSynth2;
 
     })(AudioletGroup);
   });
@@ -2178,13 +2240,13 @@
 
       function Bells() {}
 
-      Bells.LITTLE_BELL_GAIN = 0.2;
+      Bells.LITTLE_BELL_GAIN = 0.15;
 
-      Bells.BIG_BELL_GAIN = 0.5;
+      Bells.BIG_BELL_GAIN = 0.35;
 
-      Bells.LITTLE_BELL_TIME = 1.0;
+      Bells.LITTLE_BELL_TIME = 0.5;
 
-      Bells.BIG_BELL_TIME = 3.0;
+      Bells.BIG_BELL_TIME = 1.0;
 
       return Bells;
 
@@ -2752,7 +2814,7 @@
       };
 
       GameFactory.createDatGui = function(gameModel) {
-        var freqModulator, gui, levelController, levelFolder, physicsFolder, playerFolder, soundController, soundFolder,
+        var gui, levelController, levelFolder, physicsFolder, playerFolder, soundController, soundFolder,
           _this = this;
         gui = new dat.GUI();
         physicsFolder = gui.addFolder('Physics');
@@ -2773,18 +2835,9 @@
         playerFolder.add(gameModel.player, "speed").listen();
         soundFolder = gui.addFolder('Sound');
         soundController = soundFolder.add(this.sound, "VOLUME", 0, 1).step(0.1).listen();
-        soundController.onFinishChange(function(volume) {
+        return soundController.onFinishChange(function(volume) {
           return _this.sound.setVolume(volume);
         });
-        freqModulator = soundFolder.add(this.sound.playerSynth, "FREQUENCY_MODULATION", 0, 50).step(1).listen();
-        freqModulator.onFinishChange(function(modulation) {
-          return _this.sound.playerSynth.setFrequencyModulation(modulation);
-        });
-        soundFolder.add(FNT.PlayerSynth, "NORMAL_FREQUENCY", 10, 400);
-        soundFolder.add(FNT.PlayerSynth, "ORBIT_FREQUENCY", 10, 500);
-        soundFolder.add(FNT.PlayerSynth, "MAXIMUM_SPEED", 0, 12).step(1);
-        soundFolder.add(FNT.PlayerSynth, "GAIN_DELTA", 0, 1).step(0.005);
-        return soundFolder.add(FNT.PlayerSynth, "FREQUENCY_DELTA", 0, 50).step(1);
       };
 
       return GameFactory;
