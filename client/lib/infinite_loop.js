@@ -457,6 +457,24 @@
                 diameter: 250
               }
             ],
+            portals: [
+              {
+                type: FNT.Portals.RESPAWN,
+                x: 350,
+                y: FNT.Game.MIDDLE.y + 100,
+                diameter: 50
+              }, {
+                type: FNT.Portals.RESPAWN,
+                x: 750,
+                y: FNT.Game.MIDDLE.y + 100,
+                diameter: 50
+              }, {
+                type: FNT.Portals.RESPAWN,
+                x: 1150,
+                y: FNT.Game.MIDDLE.y + 100,
+                diameter: 50
+              }
+            ],
             texts: [
               {
                 text: "rings",
@@ -502,6 +520,84 @@
                 start: FNT.Time.ONE_SECOND,
                 duration: FNT.Time.FIVE_SECONDS,
                 size: 24
+              }
+            ]
+          }, {
+            spawnLocation: {
+              x: FNT.Game.MIDDLE.x,
+              y: FNT.Game.MIDDLE.y
+            },
+            exit: {
+              x: 100,
+              y: 100
+            },
+            ringData: [
+              {
+                x: FNT.Game.MIDDLE.x,
+                y: FNT.Game.MIDDLE.y,
+                diameter: 100
+              }, {
+                x: FNT.Game.MIDDLE.x + 50,
+                y: FNT.Game.MIDDLE.y - 50,
+                diameter: 200
+              }, {
+                x: FNT.Game.MIDDLE.x + 100,
+                y: FNT.Game.MIDDLE.y,
+                diameter: 300
+              }, {
+                x: FNT.Game.MIDDLE.x,
+                y: FNT.Game.MIDDLE.y - 100,
+                diameter: 400
+              }, {
+                x: FNT.Game.MIDDLE.x - 25,
+                y: FNT.Game.MIDDLE.y,
+                diameter: 500
+              }, {
+                x: FNT.Game.MIDDLE.x,
+                y: FNT.Game.MIDDLE.y + 25,
+                diameter: 600
+              }, {
+                x: FNT.Game.MIDDLE.x - 200,
+                y: FNT.Game.MIDDLE.y,
+                diameter: 700
+              }, {
+                x: FNT.Game.MIDDLE.x,
+                y: FNT.Game.MIDDLE.y + 200,
+                diameter: 800
+              }, {
+                x: FNT.Game.MIDDLE.x + 100,
+                y: FNT.Game.MIDDLE.y - 100,
+                diameter: 900
+              }, {
+                x: FNT.Game.MIDDLE.x + 100,
+                y: FNT.Game.MIDDLE.y + 100,
+                diameter: 1000
+              }, {
+                x: FNT.Game.MIDDLE.x + 50,
+                y: FNT.Game.MIDDLE.y - 50,
+                diameter: 1100
+              }, {
+                x: FNT.Game.MIDDLE.x,
+                y: FNT.Game.MIDDLE.y,
+                diameter: 400
+              }, {
+                x: FNT.Game.MIDDLE.x,
+                y: FNT.Game.MIDDLE.y,
+                diameter: 700
+              }, {
+                x: FNT.Game.MIDDLE.x,
+                y: FNT.Game.MIDDLE.y,
+                diameter: 1200
+              }
+            ],
+            texts: [
+              {
+                text: "escape",
+                x: FNT.Game.MIDDLE.x,
+                y: FNT.Game.MIDDLE.y - 20,
+                start: FNT.Time.ONE_SECOND,
+                duration: FNT.Time.FIVE_SECONDS,
+                size: 20
               }
             ]
           }, {

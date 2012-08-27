@@ -68,6 +68,10 @@ namespace "FNT", (exports) ->
                             {x: 750, y: FNT.Game.MIDDLE.y, diameter: 250},
                             {x: 950, y: FNT.Game.MIDDLE.y, diameter: 250},
                             {x: 1150, y: FNT.Game.MIDDLE.y, diameter: 250}, ],
+               portals: [
+                            {type: FNT.Portals.RESPAWN, x: 350, y: FNT.Game.MIDDLE.y + 100, diameter: 50},
+                            {type: FNT.Portals.RESPAWN, x: 750, y: FNT.Game.MIDDLE.y + 100, diameter: 50},
+                            {type: FNT.Portals.RESPAWN, x: 1150, y: FNT.Game.MIDDLE.y + 100, diameter: 50}, ]
                texts: [
                             {text: "rings", x: FNT.Game.MIDDLE.x - 100, y: FNT.Game.MIDDLE.y - 50, start: FNT.Time.ONE_SECOND, duration: FNT.Time.FIVE_SECONDS, size: 24} ]
            },
@@ -80,6 +84,27 @@ namespace "FNT", (exports) ->
                texts: [
                             {text: "press 'R' to retry the current level", x: FNT.Game.MIDDLE.x + 100, y: FNT.Game.MIDDLE.y - 50, start: FNT.Time.TEN_SECONDS, duration: FNT.Time.FOUR_SECONDS, size: 18}
                             {text: "monkeybars", x: 540, y: FNT.Game.MIDDLE.y + 80, start: FNT.Time.ONE_SECOND, duration: FNT.Time.FIVE_SECONDS, size: 24} ]
+           },
+           {
+               spawnLocation : {x: FNT.Game.MIDDLE.x, y: FNT.Game.MIDDLE.y},
+               exit: {x: 100, y: 100},
+               ringData : [  
+                            {x: FNT.Game.MIDDLE.x, y: FNT.Game.MIDDLE.y, diameter: 100}
+                            {x: FNT.Game.MIDDLE.x + 50, y: FNT.Game.MIDDLE.y - 50, diameter: 200}
+                            {x: FNT.Game.MIDDLE.x + 100, y: FNT.Game.MIDDLE.y, diameter: 300}
+                            {x: FNT.Game.MIDDLE.x, y: FNT.Game.MIDDLE.y - 100, diameter: 400}
+                            {x: FNT.Game.MIDDLE.x - 25, y: FNT.Game.MIDDLE.y, diameter: 500}
+                            {x: FNT.Game.MIDDLE.x, y: FNT.Game.MIDDLE.y + 25, diameter: 600}
+                            {x: FNT.Game.MIDDLE.x - 200, y: FNT.Game.MIDDLE.y, diameter: 700}
+                            {x: FNT.Game.MIDDLE.x, y: FNT.Game.MIDDLE.y + 200, diameter: 800}
+                            {x: FNT.Game.MIDDLE.x + 100, y: FNT.Game.MIDDLE.y - 100, diameter: 900}
+                            {x: FNT.Game.MIDDLE.x + 100, y: FNT.Game.MIDDLE.y + 100, diameter: 1000}
+                            {x: FNT.Game.MIDDLE.x + 50, y: FNT.Game.MIDDLE.y - 50, diameter: 1100}
+                            {x: FNT.Game.MIDDLE.x, y: FNT.Game.MIDDLE.y, diameter: 400}
+                            {x: FNT.Game.MIDDLE.x, y: FNT.Game.MIDDLE.y, diameter: 700}
+                            {x: FNT.Game.MIDDLE.x, y: FNT.Game.MIDDLE.y, diameter: 1200}],
+               texts: [
+                            {text: "escape", x: FNT.Game.MIDDLE.x, y: FNT.Game.MIDDLE.y - 20, start: FNT.Time.ONE_SECOND, duration: FNT.Time.FIVE_SECONDS, size: 20} ]
            },
            {
                spawnLocation :    {x: 312, y: 200},
