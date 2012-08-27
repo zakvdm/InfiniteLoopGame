@@ -2031,6 +2031,9 @@
       };
 
       SoundController.prototype.step = function() {
+        if (!this.soundInitialized) {
+          return;
+        }
         this.playerSynth.update(this.gameModel.player);
         return this.bellSynth.update();
       };

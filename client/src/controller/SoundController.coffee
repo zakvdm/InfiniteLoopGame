@@ -50,6 +50,8 @@ namespace "FNT", (exports) ->
       
 
     step: ->
+      if not @soundInitialized then return
+
       @playerSynth.update(@gameModel.player)
       @bellSynth.update()
       
