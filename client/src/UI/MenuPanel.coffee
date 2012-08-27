@@ -24,10 +24,14 @@ namespace "FNT", (exports) ->
           setDiameter(80).
           setText(FNT.Strings.NEW_GAME).
           setPosition(new CAAT.Point(500, 270))
+      @toggleSoundButton = FNT.ButtonFactory.buildToggleButton(@).
+          setDiameter(35).
+          setText(FNT.Strings.TOGGLE_SOUND).
+          setPosition(new CAAT.Point(300, 520))
       @aboutButton = FNT.ButtonFactory.build(@).
-          setDiameter(30).
+          setDiameter(50).
           setText(FNT.Strings.ABOUT).
-          setPosition(new CAAT.Point(300, 480))
+          setPosition(new CAAT.Point(450, 380))
 
       @
      

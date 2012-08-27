@@ -26,6 +26,7 @@ namespace "FNT", (exports) ->
       @sound = new FNT.SoundController().create(gameModel, keyboard)
       
       return new FNT.GameController([physics, @sound], gameModel, keyboard)
+      #return new FNT.GameController([physics], gameModel, keyboard)
       
     @createGameView: (director, gameModel, gameController) ->
       gameScene = FNT.GameSceneActorFactory.build(director, gameModel, gameController)
@@ -50,9 +51,9 @@ namespace "FNT", (exports) ->
       playerFolder.add(gameModel.player.position, "y").listen()
       playerFolder.add(gameModel.player, "speed").listen()
       
-      soundFolder = gui.addFolder('Sound')
-      soundController = soundFolder.add(@sound, "VOLUME", 0, 1).step(0.1).listen()
-      soundController.onFinishChange((volume) => @sound.setVolume(volume))
+      #soundFolder = gui.addFolder('Sound')
+      #soundController = soundFolder.add(@sound, "VOLUME", 0, 1).step(0.1).listen()
+      #soundController.onFinishChange((volume) => @sound.setVolume(volume))
       #freqModulator = soundFolder.add(@sound.playerSynth, "FREQUENCY_MODULATION", 0, 50).step(1).listen()
       #freqModulator.onFinishChange((modulation) => @sound.playerSynth.setFrequencyModulation(modulation))
       #soundFolder.add(FNT.PlayerSynth, "NORMAL_FREQUENCY", 10, 400)

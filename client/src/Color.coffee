@@ -39,6 +39,8 @@ namespace "FNT", (exports) ->
     @PLAYER:        @_get(1)
     @BUTTON:        @_get(1)
     @BUTTON_DOWN:   @_get(2)
+    @TOGGLE_ON:     @_get(2)
+    @TOGGLE_OFF:    @GRAY
     @PORTAL:        @WHITE
     
     @MEDIUM:        @_get(3)

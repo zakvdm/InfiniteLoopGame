@@ -31,6 +31,8 @@ namespace "FNT", (exports) ->
       out.gain.setValue(gain)
       out.connect(@outputs[0])
       
+      @stop()
+      
       @
       
     start: ->

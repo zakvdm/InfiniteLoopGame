@@ -4,6 +4,13 @@ namespace "FNT", (exports) ->
   class exports.SoundController
  
     create: (@gameModel, @keyboard, @VOLUME = 1) ->
+      @gameModel.addObserver(this)
+      
+      @soundInitialized = false
+      
+      @
+      
+    initializeSound: ->
       @audiolet = new Audiolet()
 
       @playerSynth = new FNT.PlayerSynth(@audiolet)
@@ -18,7 +25,24 @@ namespace "FNT", (exports) ->
 
       @gain.connect(@audiolet.output)
   
+      @soundInitialized = true
+      
       @
+      
+    toggleSound: (soundOn) ->
+      if soundOn
+        if @soundInitialized
+          @audiolet.output.device.play()
+        else
+          @initializeSound()
+      else
+        @audiolet.output.device.pause()
+        
+      
+    handleEvent: (event) ->
+      switch event.type
+        when FNT.GameEvents.TOGGLE_SOUND
+          @toggleSound(event.data)
       
     setVolume: (vol) ->
       @VOLUME = vol
