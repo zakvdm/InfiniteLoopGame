@@ -43,9 +43,8 @@ namespace "FNT", (exports) ->
   
     scene # return the scene object
     
-  __end_loading = (director, images) ->
+  __end_loading = (director) ->
     director.emptyScenes()
-    director.setImagesCache(images)
   
     gameScene = FNT.GameFactory.build(director)
   
@@ -74,36 +73,15 @@ namespace "FNT", (exports) ->
     CAAT.DEBUG = 1
   
     director = __createCanvas()
+    
+    console.log("Created canvas")
   
     # Uncomment to make the game conform to window's size.
     #director.enableResizeEvents(CAAT.Director.prototype.RESIZE_PROPORTIONAL)
-  
-    prefix = __RESOURCE_URL ? '' # TODO: What does this do? is it necessary?
-  
-    new CAAT.ImagePreloader().loadImages(
-        [
-            #{id:'splash',   url: prefix + 'splash/splash.jpg'},
-            #{id:'lading',   url: prefix + 'splash/lading.png'},
-            #{id:'rueda',    url: prefix + 'splash/rueda.png'}
-        ],
-        (counter, images) ->
-          if (counter == images.length)
-            director.setImagesCache(images)
-            loading_scene = __FNT__createLoadingScene(director)
-  
-            new CAAT.ImagePreloader().loadImages(
-                [
-                    #{id:'target-number',    url: prefix + 'res/img/target.png'}
-                ],
-                (counter, images) ->
-                  #if (counter == images.length)
-                    #director.addAudio("music", prefix + "res/sound/music.mp3")
-  
-                  loading_scene.loadedImage(counter, images);
-            )
-    )
+    
+    __end_loading(director)
+    
+    console.log("Starting game")
   
     CAAT.loop(60);
-  
-  #window.addEventListener('load', __game_init, false)
 

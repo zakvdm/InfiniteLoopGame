@@ -9,7 +9,7 @@ namespace "FNT", (exports) ->
       gameModel = @createGameModel()
       gameController = @createGameController(gameModel)
       
-      @createDatGui(gameModel)
+      @createDatGui(gameModel) if CAAT.DEBUG == 1
       
       return @createGameView(director, gameModel, gameController)
     

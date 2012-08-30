@@ -20,4 +20,4 @@ namespace "FNT", (exports) ->
     @RETRY:              "'R' - retry the current level"
     
     @ABOUT:              "by Zak van der Merwe"
-    @ABOUT_URL:          "http://about.zakvdm.org"
+    @ABOUT_URL:          "github.com/zakvdm/InfiniteLoopGame"

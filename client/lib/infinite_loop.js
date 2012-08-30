@@ -158,7 +158,7 @@
 
       Strings.ABOUT = "by Zak van der Merwe";
 
-      Strings.ABOUT_URL = "http://about.zakvdm.org";
+      Strings.ABOUT_URL = "github.com/zakvdm/InfiniteLoopGame";
 
       return Strings;
 
@@ -544,18 +544,18 @@
               }, {
                 x: FNT.Game.MIDDLE.x + 50,
                 y: FNT.Game.MIDDLE.y - 50,
-                diameter: 200
+                diameter: 190
               }, {
                 x: FNT.Game.MIDDLE.x,
                 y: FNT.Game.MIDDLE.y - 100,
                 diameter: 400
               }, {
-                x: FNT.Game.MIDDLE.x,
-                y: FNT.Game.MIDDLE.y + 25,
+                x: FNT.Game.MIDDLE.x - 10,
+                y: FNT.Game.MIDDLE.y + 60,
                 diameter: 600
               }, {
-                x: FNT.Game.MIDDLE.x + 100,
-                y: FNT.Game.MIDDLE.y - 100,
+                x: FNT.Game.MIDDLE.x + 50,
+                y: FNT.Game.MIDDLE.y - 120,
                 diameter: 900
               }
             ],
@@ -611,6 +611,16 @@
                 x: 850,
                 y: 250,
                 diameter: 200
+              }
+            ],
+            texts: [
+              {
+                text: "goto",
+                x: FNT.Game.MIDDLE.x + 50,
+                y: FNT.Game.MIDDLE.y - 50,
+                start: FNT.Time.ONE_SECOND,
+                duration: FNT.Time.FIVE_SECONDS,
+                size: 28
               }
             ]
           }
@@ -1868,7 +1878,7 @@
         this.textActor = FNT.TextFactory.build(this, FNT.Strings.GAME_NAME, 52);
         this.textActor.setLocation(100, 100);
         this.aboutTextActor = FNT.TextFactory.build(this, FNT.Strings.ABOUT, 16).setLocation(180, 160);
-        this.urlTextActor = FNT.TextFactory.build(this, FNT.Strings.ABOUT_URL, 16).setLocation(230, 550);
+        this.urlTextActor = FNT.TextFactory.build(this, FNT.Strings.ABOUT_URL, 16).setLocation(180, 540);
         this.toggle = FNT.TextFactory.build(this, FNT.Strings.CLICK_TO_TOGGLE, 12);
         return this.toggle.setLocation(482, 482).setRotation(-Math.PI / 3.8);
       };
@@ -2843,7 +2853,9 @@
         var gameController, gameModel;
         gameModel = this.createGameModel();
         gameController = this.createGameController(gameModel);
-        this.createDatGui(gameModel);
+        if (CAAT.DEBUG === 1) {
+          this.createDatGui(gameModel);
+        }
         return this.createGameView(director, gameModel, gameController);
       };
 
@@ -2960,10 +2972,9 @@
       };
       return scene;
     };
-    __end_loading = function(director, images) {
+    __end_loading = function(director) {
       var gameScene;
       director.emptyScenes();
-      director.setImagesCache(images);
       gameScene = FNT.GameFactory.build(director);
       return director.easeIn(0, CAAT.Scene.prototype.EASE_TRANSLATE, 1000, false, CAAT.Actor.prototype.ANCHOR_TOP, new CAAT.Interpolator().createExponentialInOutInterpolator(5, false));
     };
@@ -2971,22 +2982,14 @@
       return new CAAT.Director().initialize(FNT.Game.WIDTH, FNT.Game.HEIGHT).setClear(false);
     };
     return exports.initGame = function(font) {
-      var director, prefix;
+      var director;
       console.log("Starting game");
       FNT.Game.FONT = font;
       CAAT.DEBUG = 1;
       director = __createCanvas();
-      prefix = typeof __RESOURCE_URL !== "undefined" && __RESOURCE_URL !== null ? __RESOURCE_URL : '';
-      new CAAT.ImagePreloader().loadImages([], function(counter, images) {
-        var loading_scene;
-        if (counter === images.length) {
-          director.setImagesCache(images);
-          loading_scene = __FNT__createLoadingScene(director);
-          return new CAAT.ImagePreloader().loadImages([], function(counter, images) {
-            return loading_scene.loadedImage(counter, images);
-          });
-        }
-      });
+      console.log("Created canvas");
+      __end_loading(director);
+      console.log("Starting game");
       return CAAT.loop(60);
     };
   });

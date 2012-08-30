@@ -93,11 +93,10 @@ namespace "FNT", (exports) ->
                exit: {x: 100, y: 400},
                ringData : [  
                             {x: FNT.Game.MIDDLE.x, y: FNT.Game.MIDDLE.y, diameter: 100}
-                            {x: FNT.Game.MIDDLE.x + 50, y: FNT.Game.MIDDLE.y - 50, diameter: 200}
+                            {x: FNT.Game.MIDDLE.x + 50, y: FNT.Game.MIDDLE.y - 50, diameter: 190}
                             {x: FNT.Game.MIDDLE.x, y: FNT.Game.MIDDLE.y - 100, diameter: 400}
-                            {x: FNT.Game.MIDDLE.x, y: FNT.Game.MIDDLE.y + 25, diameter: 600}
-                            #{x: FNT.Game.MIDDLE.x - 400, y: FNT.Game.MIDDLE.y, diameter: 200}
-                            {x: FNT.Game.MIDDLE.x + 100, y: FNT.Game.MIDDLE.y - 100, diameter: 900} ],
+                            {x: FNT.Game.MIDDLE.x - 10, y: FNT.Game.MIDDLE.y + 60, diameter: 600}
+                            {x: FNT.Game.MIDDLE.x + 50, y: FNT.Game.MIDDLE.y - 120, diameter: 900} ],
                texts: [
                             {text: "escape", x: FNT.Game.MIDDLE.x + 50, y: FNT.Game.MIDDLE.y - 50, start: FNT.Time.ONE_SECOND, duration: FNT.Time.FIVE_SECONDS, size: 20} ]
            },
@@ -113,6 +112,8 @@ namespace "FNT", (exports) ->
                             {x: 1200, y: 580, diameter: 120},
                             {x: 700, y: 250, diameter: 200},
                             {x: 850, y: 250, diameter: 200}],
+               texts: [
+                            {text: "goto", x: FNT.Game.MIDDLE.x + 50, y: FNT.Game.MIDDLE.y - 50, start: FNT.Time.ONE_SECOND, duration: FNT.Time.FIVE_SECONDS, size: 28} ]
            },
         ]
       # RACE MODE

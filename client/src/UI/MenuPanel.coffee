@@ -42,7 +42,7 @@ namespace "FNT", (exports) ->
       @textActor.setLocation(100, 100)
       
       @aboutTextActor = FNT.TextFactory.build(@, FNT.Strings.ABOUT, 16).setLocation(180, 160)
-      @urlTextActor = FNT.TextFactory.build(@, FNT.Strings.ABOUT_URL, 16).setLocation(230, 550)
+      @urlTextActor = FNT.TextFactory.build(@, FNT.Strings.ABOUT_URL, 16).setLocation(180, 540)
       
       @toggle = FNT.TextFactory.build(@, FNT.Strings.CLICK_TO_TOGGLE, 12)
       @toggle.setLocation(482, 482).setRotation(- Math.PI / 3.8)
