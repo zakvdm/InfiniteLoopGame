@@ -19,6 +19,11 @@ namespace "FNT", (exports) ->
       @spawnLocation = levelData.spawnLocation
       @exit = levelData.exit
       
+      if levelData.ringAlpha?
+        @ringAlpha = levelData.ringAlpha
+      else
+        @ringAlpha = 0.5
+      
       @_texts = levelData.texts # All the little bits of text shown for this level (tutorials, level name, etc.)
       
       @_rings = []

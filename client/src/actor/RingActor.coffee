@@ -5,7 +5,7 @@ namespace "FNT", (exports) ->
       super()
       @
       
-    create: (@ring, @_alpha = 0.5) ->
+    create: (@ring, @_alpha = 0.5, @_lineWidth = 2) ->
       @setDiameter(ring.diameter)
       @setPosition(ring.position)
   
@@ -28,17 +28,17 @@ namespace "FNT", (exports) ->
           @_passableState()
     
     _normalState: ->
-      @setLineWidth(1)
+      @setLineWidth(@_lineWidth)
       @setFillStyle(FNT.Color.GRAY)
       @setAlpha(@_alpha)
   
     
     _orbitedState: ->
-      @setLineWidth(2)
-      @setAlpha(0.8)
+      @setLineWidth(@_lineWidth * 1.5)
+      @setAlpha(@_alpha * 1.5)
         
     _passableState: ->
-      @setLineWidth(1)
+      @setLineWidth(@_lineWidth / 2)
       @setFillStyle(FNT.Color.GRAY)
-      @setAlpha(0.2)
+      @setAlpha(@_alpha / 3)
   

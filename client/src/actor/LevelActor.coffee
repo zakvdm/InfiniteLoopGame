@@ -19,7 +19,7 @@ namespace "FNT", (exports) ->
       @emptyBehaviorList()
       
       @_createBorder()
-      @_createRing(ringModel) for ringModel in @levelModel.getRings() # Create all the RingActors
+      @_createRing(ringModel, @levelModel.ringAlpha) for ringModel in @levelModel.getRings() # Create all the RingActors
       
       @_createPortal(portalModel) for portalModel in @levelModel.getPortals()
       
@@ -56,8 +56,8 @@ namespace "FNT", (exports) ->
     removeBorder: ->
       @borderActor.addBehavior(@fadeOut.setDelayTime(0, FNT.Time.ONE_SECOND))
      
-    _createRing: (ringModel) ->
-      ringActor = new FNT.RingActor().create(ringModel, 0.5)
+    _createRing: (ringModel, alpha) ->
+      ringActor = new FNT.RingActor().create(ringModel, alpha)
   
       # ADD TO THE SCENE
       @ringActors.push(ringActor)
