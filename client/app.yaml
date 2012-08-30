@@ -1,0 +1,12 @@
+application: infiniteloopgame
+version: 1
+runtime: python27
+api_version: 1
+threadsafe: true
+
+handlers:
+- url: /lib
+  static_dir: lib
+- url: /
+  static_files: main.html
+  upload: main.html
