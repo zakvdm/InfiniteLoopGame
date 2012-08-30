@@ -142,8 +142,6 @@
 
       Strings.TOGGLE_SOUND = "Sound (EXPERIMENTAL!)";
 
-      Strings.ABOUT = "About...";
-
       Strings.TOGGLE_ON_STATE = "ON";
 
       Strings.TOGGLE_OFF_STATE = "OFF";
@@ -157,6 +155,10 @@
       Strings.CLAMP = "'J' - clamp on to a nearby loop";
 
       Strings.RETRY = "'R' - retry the current level";
+
+      Strings.ABOUT = "by Zak van der Merwe";
+
+      Strings.ABOUT_URL = "http://about.zakvdm.org";
 
       return Strings;
 
@@ -227,6 +229,7 @@
         name: "quest",
         levelData: [
           {
+            ringAlpha: 0.8,
             spawnLocation: {
               x: 500,
               y: 630
@@ -281,6 +284,7 @@
               }
             ]
           }, {
+            ringAlpha: 0.8,
             spawnLocation: {
               x: FNT.Game.MIDDLE.x,
               y: FNT.Game.MIDDLE.y - 275
@@ -523,13 +527,14 @@
               }
             ]
           }, {
+            ringAlpha: 0.3,
             spawnLocation: {
               x: FNT.Game.MIDDLE.x,
               y: FNT.Game.MIDDLE.y
             },
             exit: {
               x: 100,
-              y: 100
+              y: 400
             },
             ringData: [
               {
@@ -541,60 +546,24 @@
                 y: FNT.Game.MIDDLE.y - 50,
                 diameter: 200
               }, {
-                x: FNT.Game.MIDDLE.x + 100,
-                y: FNT.Game.MIDDLE.y,
-                diameter: 300
-              }, {
                 x: FNT.Game.MIDDLE.x,
                 y: FNT.Game.MIDDLE.y - 100,
                 diameter: 400
-              }, {
-                x: FNT.Game.MIDDLE.x - 25,
-                y: FNT.Game.MIDDLE.y,
-                diameter: 500
               }, {
                 x: FNT.Game.MIDDLE.x,
                 y: FNT.Game.MIDDLE.y + 25,
                 diameter: 600
               }, {
-                x: FNT.Game.MIDDLE.x - 200,
-                y: FNT.Game.MIDDLE.y,
-                diameter: 700
-              }, {
-                x: FNT.Game.MIDDLE.x,
-                y: FNT.Game.MIDDLE.y + 200,
-                diameter: 800
-              }, {
                 x: FNT.Game.MIDDLE.x + 100,
                 y: FNT.Game.MIDDLE.y - 100,
                 diameter: 900
-              }, {
-                x: FNT.Game.MIDDLE.x + 100,
-                y: FNT.Game.MIDDLE.y + 100,
-                diameter: 1000
-              }, {
-                x: FNT.Game.MIDDLE.x + 50,
-                y: FNT.Game.MIDDLE.y - 50,
-                diameter: 1100
-              }, {
-                x: FNT.Game.MIDDLE.x,
-                y: FNT.Game.MIDDLE.y,
-                diameter: 400
-              }, {
-                x: FNT.Game.MIDDLE.x,
-                y: FNT.Game.MIDDLE.y,
-                diameter: 700
-              }, {
-                x: FNT.Game.MIDDLE.x,
-                y: FNT.Game.MIDDLE.y,
-                diameter: 1200
               }
             ],
             texts: [
               {
                 text: "escape",
-                x: FNT.Game.MIDDLE.x,
-                y: FNT.Game.MIDDLE.y - 20,
+                x: FNT.Game.MIDDLE.x + 50,
+                y: FNT.Game.MIDDLE.y - 50,
                 start: FNT.Time.ONE_SECOND,
                 duration: FNT.Time.FIVE_SECONDS,
                 size: 20
@@ -833,6 +802,11 @@
         var portal, ring, _i, _j, _len, _len1, _ref, _ref1, _results;
         this.spawnLocation = levelData.spawnLocation;
         this.exit = levelData.exit;
+        if (levelData.ringAlpha != null) {
+          this.ringAlpha = levelData.ringAlpha;
+        } else {
+          this.ringAlpha = 0.5;
+        }
         this._texts = levelData.texts;
         this._rings = [];
         _ref = levelData.ringData;
@@ -1159,9 +1133,10 @@
 
       }
 
-      RingActor.prototype.create = function(ring, _alpha) {
+      RingActor.prototype.create = function(ring, _alpha, _lineWidth) {
         this.ring = ring;
         this._alpha = _alpha != null ? _alpha : 0.5;
+        this._lineWidth = _lineWidth != null ? _lineWidth : 2;
         this.setDiameter(ring.diameter);
         this.setPosition(ring.position);
         this.setStrokeStyle(FNT.Color.BLACK);
@@ -1182,20 +1157,20 @@
       };
 
       RingActor.prototype._normalState = function() {
-        this.setLineWidth(1);
+        this.setLineWidth(this._lineWidth);
         this.setFillStyle(FNT.Color.GRAY);
         return this.setAlpha(this._alpha);
       };
 
       RingActor.prototype._orbitedState = function() {
-        this.setLineWidth(2);
-        return this.setAlpha(0.8);
+        this.setLineWidth(this._lineWidth * 1.5);
+        return this.setAlpha(this._alpha * 1.5);
       };
 
       RingActor.prototype._passableState = function() {
-        this.setLineWidth(1);
+        this.setLineWidth(this._lineWidth / 2);
         this.setFillStyle(FNT.Color.GRAY);
-        return this.setAlpha(0.2);
+        return this.setAlpha(this._alpha / 3);
       };
 
       return RingActor;
@@ -1257,7 +1232,7 @@
         _ref = this.levelModel.getRings();
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           ringModel = _ref[_i];
-          this._createRing(ringModel);
+          this._createRing(ringModel, this.levelModel.ringAlpha);
         }
         _ref1 = this.levelModel.getPortals();
         for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
@@ -1328,9 +1303,9 @@
         return this.borderActor.addBehavior(this.fadeOut.setDelayTime(0, FNT.Time.ONE_SECOND));
       };
 
-      LevelActor.prototype._createRing = function(ringModel) {
+      LevelActor.prototype._createRing = function(ringModel, alpha) {
         var ringActor;
-        ringActor = new FNT.RingActor().create(ringModel, 0.5);
+        ringActor = new FNT.RingActor().create(ringModel, alpha);
         this.ringActors.push(ringActor);
         return this.addChild(ringActor);
       };
@@ -1877,8 +1852,7 @@
         MenuPanel.__super__.create.call(this, this.scene);
         this.setDiameter(600);
         this.newGameButton = FNT.ButtonFactory.build(this).setDiameter(80).setText(FNT.Strings.NEW_GAME).setPosition(new CAAT.Point(500, 270));
-        this.toggleSoundButton = FNT.ButtonFactory.buildToggleButton(this).setDiameter(35).setText(FNT.Strings.TOGGLE_SOUND).setPosition(new CAAT.Point(300, 520));
-        this.aboutButton = FNT.ButtonFactory.build(this).setDiameter(50).setText(FNT.Strings.ABOUT).setPosition(new CAAT.Point(450, 380));
+        this.toggleSoundButton = FNT.ButtonFactory.buildToggleButton(this).setDiameter(35).setText(FNT.Strings.TOGGLE_SOUND).setPosition(new CAAT.Point(400, 420));
         return this;
       };
 
@@ -1893,6 +1867,8 @@
       MenuPanel.prototype._createText = function() {
         this.textActor = FNT.TextFactory.build(this, FNT.Strings.GAME_NAME, 52);
         this.textActor.setLocation(100, 100);
+        this.aboutTextActor = FNT.TextFactory.build(this, FNT.Strings.ABOUT, 16).setLocation(180, 160);
+        this.urlTextActor = FNT.TextFactory.build(this, FNT.Strings.ABOUT_URL, 16).setLocation(230, 550);
         this.toggle = FNT.TextFactory.build(this, FNT.Strings.CLICK_TO_TOGGLE, 12);
         return this.toggle.setLocation(482, 482).setRotation(-Math.PI / 3.8);
       };
@@ -1930,9 +1906,6 @@
         this.menuPanel.toggleSoundButton.setOnToggle(function(toggled) {
           return _this._toggleSound(toggled);
         });
-        this.menuPanel.aboutButton.setOnClick(function() {
-          return alert("HELP CLICKED!");
-        });
         this.menuPanel.mouseDown = function(mouseEvent) {
           return _this._mouseDown(mouseEvent);
         };
@@ -1944,7 +1917,6 @@
         this.scene.addActorToInputList(this.infoPanel, 0, 0);
         this.scene.addActorToInputList(this.menuPanel.newGameButton, 0, 0);
         this.scene.addActorToInputList(this.menuPanel.toggleSoundButton, 0, 0);
-        this.scene.addActorToInputList(this.menuPanel.aboutButton, 0, 0);
         this.menuPanel.animateIn();
         this.infoPanel.animateIn();
         this.state = FNT.PanelState.OUTGOING;
