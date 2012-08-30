@@ -10,7 +10,6 @@ namespace "FNT", (exports) ->
       
       @menuPanel.newGameButton.setOnClick(=> @_newGameClicked())
       @menuPanel.toggleSoundButton.setOnToggle((toggled) => @_toggleSound(toggled))
-      @menuPanel.aboutButton.setOnClick(=> alert("HELP CLICKED!"))
       
       @menuPanel.mouseDown = (mouseEvent) => @_mouseDown(mouseEvent)
       @infoPanel.mouseDown = (mouseEvent) => @_mouseDown(mouseEvent)
@@ -20,7 +19,6 @@ namespace "FNT", (exports) ->
       @scene.addActorToInputList( @infoPanel, 0, 0 )
       @scene.addActorToInputList( @menuPanel.newGameButton, 0, 0 )
       @scene.addActorToInputList( @menuPanel.toggleSoundButton, 0, 0 )
-      @scene.addActorToInputList( @menuPanel.aboutButton, 0, 0 )
 
       @menuPanel.animateIn()
       @infoPanel.animateIn()
@@ -46,5 +44,3 @@ namespace "FNT", (exports) ->
     
     _toggleSound: (soundOn) ->
       @gameModel.toggleSound(soundOn)
-    
-      

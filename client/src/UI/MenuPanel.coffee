@@ -27,11 +27,7 @@ namespace "FNT", (exports) ->
       @toggleSoundButton = FNT.ButtonFactory.buildToggleButton(@).
           setDiameter(35).
           setText(FNT.Strings.TOGGLE_SOUND).
-          setPosition(new CAAT.Point(300, 520))
-      @aboutButton = FNT.ButtonFactory.build(@).
-          setDiameter(50).
-          setText(FNT.Strings.ABOUT).
-          setPosition(new CAAT.Point(450, 380))
+          setPosition(new CAAT.Point(400, 420))
 
       @
      
@@ -44,6 +40,9 @@ namespace "FNT", (exports) ->
     _createText: ->
       @textActor = FNT.TextFactory.build(@, FNT.Strings.GAME_NAME, 52)
       @textActor.setLocation(100, 100)
+      
+      @aboutTextActor = FNT.TextFactory.build(@, FNT.Strings.ABOUT, 16).setLocation(180, 160)
+      @urlTextActor = FNT.TextFactory.build(@, FNT.Strings.ABOUT_URL, 16).setLocation(230, 550)
       
       @toggle = FNT.TextFactory.build(@, FNT.Strings.CLICK_TO_TOGGLE, 12)
       @toggle.setLocation(482, 482).setRotation(- Math.PI / 3.8)

@@ -3,11 +3,10 @@
 namespace "FNT", (exports) ->
   
   class exports.Strings
-    @GAME_NAME:      "Infinite Loop"
+    @GAME_NAME:          "Infinite Loop"
     
     @NEW_GAME:           "New Game"
     @TOGGLE_SOUND:       "Sound (EXPERIMENTAL!)"
-    @ABOUT:              "About..."
    
     @TOGGLE_ON_STATE:    "ON"
     @TOGGLE_OFF_STATE:   "OFF"
@@ -19,3 +18,6 @@ namespace "FNT", (exports) ->
     @LEFT_AND_RIGHT:     "'A' - left, 'D' - right"
     @CLAMP:              "'J' - clamp on to a nearby loop"
     @RETRY:              "'R' - retry the current level"
+    
+    @ABOUT:              "by Zak van der Merwe"
+    @ABOUT_URL:          "http://about.zakvdm.org"
