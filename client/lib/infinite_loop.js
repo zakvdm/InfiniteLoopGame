@@ -571,8 +571,78 @@
             ]
           }, {
             spawnLocation: {
-              x: 312,
-              y: 200
+              x: FNT.Game.MIDDLE.x + 20,
+              y: 30
+            },
+            exit: {
+              x: FNT.Game.MIDDLE.x - 50,
+              y: FNT.Game.HEIGHT - 50
+            },
+            ringData: [
+              {
+                x: FNT.Game.MIDDLE.x + 70,
+                y: 50 + 100,
+                diameter: 90
+              }, {
+                x: FNT.Game.MIDDLE.x - 70,
+                y: 50 + 220,
+                diameter: 90
+              }, {
+                x: FNT.Game.MIDDLE.x + 70,
+                y: 50 + 340,
+                diameter: 90
+              }, {
+                x: FNT.Game.MIDDLE.x - 70,
+                y: 50 + 460,
+                diameter: 90
+              }, {
+                x: FNT.Game.MIDDLE.x + 70,
+                y: 50 + 580,
+                diameter: 90
+              }
+            ],
+            portals: [
+              {
+                type: FNT.Portals.RESPAWN,
+                x: FNT.Game.MIDDLE.x - 50,
+                y: 50 + 100,
+                diameter: 80
+              }, {
+                type: FNT.Portals.RESPAWN,
+                x: FNT.Game.MIDDLE.x + 50,
+                y: 50 + 220,
+                diameter: 80
+              }, {
+                type: FNT.Portals.RESPAWN,
+                x: FNT.Game.MIDDLE.x - 50,
+                y: 50 + 340,
+                diameter: 80
+              }, {
+                type: FNT.Portals.RESPAWN,
+                x: FNT.Game.MIDDLE.x + 50,
+                y: 50 + 460,
+                diameter: 80
+              }, {
+                type: FNT.Portals.RESPAWN,
+                x: FNT.Game.MIDDLE.x - 50,
+                y: 50 + 580,
+                diameter: 80
+              }
+            ],
+            texts: [
+              {
+                text: "jitter",
+                x: FNT.Game.MIDDLE.x + 200,
+                y: FNT.Game.MIDDLE.y,
+                start: FNT.Time.ONE_SECOND / 2,
+                duration: FNT.Time.THREE_SECONDS,
+                size: 28
+              }
+            ]
+          }, {
+            spawnLocation: {
+              x: FNT.Game.MIDDLE.x - 100,
+              y: 300
             },
             exit: {
               x: 1050,
@@ -617,6 +687,99 @@
               {
                 text: "goto",
                 x: FNT.Game.MIDDLE.x + 50,
+                y: FNT.Game.MIDDLE.y - 50,
+                start: FNT.Time.ONE_SECOND,
+                duration: FNT.Time.FIVE_SECONDS,
+                size: 28
+              }
+            ]
+          }, {
+            spawnLocation: {
+              x: 100,
+              y: 150
+            },
+            exit: {
+              x: 100,
+              y: 600
+            },
+            ringData: [
+              {
+                x: 100,
+                y: 150,
+                diameter: 200
+              }, {
+                x: 260,
+                y: 150,
+                diameter: 200
+              }, {
+                x: 360,
+                y: 150,
+                diameter: 80
+              }, {
+                x: 720,
+                y: 175,
+                diameter: 200
+              }, {
+                x: 935,
+                y: 430,
+                diameter: 200
+              }, {
+                x: 750,
+                y: 650,
+                diameter: 200
+              }, {
+                x: 490,
+                y: 650,
+                diameter: 200
+              }
+            ],
+            portals: [
+              {
+                type: FNT.Portals.RESPAWN,
+                x: 150,
+                y: 400,
+                diameter: 200
+              }, {
+                type: FNT.Portals.RESPAWN,
+                x: 300,
+                y: 50,
+                diameter: 80
+              }, {
+                type: FNT.Portals.RESPAWN,
+                x: 300,
+                y: 250,
+                diameter: 80
+              }, {
+                type: FNT.Portals.RESPAWN,
+                x: 450,
+                y: 375,
+                diameter: 300
+              }, {
+                type: FNT.Portals.RESPAWN,
+                x: 720,
+                y: 75,
+                diameter: 200
+              }, {
+                type: FNT.Portals.RESPAWN,
+                x: 900,
+                y: 430,
+                diameter: 200
+              }, {
+                type: FNT.Portals.RESPAWN,
+                x: 750,
+                y: 600,
+                diameter: 200
+              }, {
+                type: FNT.Portals.RESPAWN,
+                x: 490,
+                y: 600,
+                diameter: 200
+              }
+            ],
+            texts: [
+              {
+                text: "anti-patterns",
+                x: FNT.Game.MIDDLE.x,
                 y: FNT.Game.MIDDLE.y - 50,
                 start: FNT.Time.ONE_SECOND,
                 duration: FNT.Time.FIVE_SECONDS,
@@ -2929,49 +3092,7 @@
 
 
   namespace("FNT", function(exports) {
-    var __FNT__createLoadingScene, __createCanvas, __end_loading;
-    __FNT__createLoadingScene = function(director) {
-      var ladingImg, oImg, scene;
-      ladingImg = director.getImage('lading');
-      oImg = director.getImage('rueda');
-      scene = director.createScene();
-      /*  
-      scene.addChild(
-        new CAAT.Actor().
-          setBackgroundImage(
-            director.getImage('splash')
-          )
-      )
-        
-      scene.addChild(
-        ladingActor = new CAAT.Actor().
-          setBackgroundImage(ladingImg).
-          setLocation(
-            director.width - ladingImg.width - 10,
-            director.height - ladingImg.height - 30
-          )
-      )
-        
-      scene.addChild(
-        oActor = new CAAT.Actor().
-          setBackgroundImage(oImg).
-          setLocation(ladingActor.x + 20, ladingActor.y + 10).
-          addBehavior(
-            new CAAT.RotateBehavior().
-              setValues(0,2*Math.PI).
-              setFrameTime(0, FNT.Time.ONE_SECOND).
-              setCycle(true)
-            )
-      )
-      */
-
-      scene.loadedImage = function(count, images) {
-        if (count === images.length) {
-          return __end_loading(director, images);
-        }
-      };
-      return scene;
-    };
+    var __createCanvas, __end_loading;
     __end_loading = function(director) {
       var gameScene;
       director.emptyScenes();
@@ -2985,7 +3106,6 @@
       var director;
       console.log("Starting game");
       FNT.Game.FONT = font;
-      CAAT.DEBUG = 1;
       director = __createCanvas();
       console.log("Created canvas");
       __end_loading(director);

@@ -3,46 +3,6 @@
 ###
 namespace "FNT", (exports) ->
 
-  __FNT__createLoadingScene = (director) ->
-    ladingImg = director.getImage('lading');
-    oImg = director.getImage('rueda');
-    scene = director.createScene();
-  
-    ###  
-    scene.addChild(
-      new CAAT.Actor().
-        setBackgroundImage(
-          director.getImage('splash')
-        )
-    )
-  
-    scene.addChild(
-      ladingActor = new CAAT.Actor().
-        setBackgroundImage(ladingImg).
-        setLocation(
-          director.width - ladingImg.width - 10,
-          director.height - ladingImg.height - 30
-        )
-    )
-  
-    scene.addChild(
-      oActor = new CAAT.Actor().
-        setBackgroundImage(oImg).
-        setLocation(ladingActor.x + 20, ladingActor.y + 10).
-        addBehavior(
-          new CAAT.RotateBehavior().
-            setValues(0,2*Math.PI).
-            setFrameTime(0, FNT.Time.ONE_SECOND).
-            setCycle(true)
-          )
-    )
-    ###
-  
-    scene.loadedImage = (count, images) ->
-      __end_loading(director, images) if count == images.length
-  
-    scene # return the scene object
-    
   __end_loading = (director) ->
     director.emptyScenes()
   
@@ -70,7 +30,7 @@ namespace "FNT", (exports) ->
     # CAAT.setCoordinateClamping(false)
   
     # uncomment to show CAAT's debug bar
-    CAAT.DEBUG = 1
+    #CAAT.DEBUG = 1
   
     director = __createCanvas()
     

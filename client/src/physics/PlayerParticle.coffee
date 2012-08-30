@@ -59,7 +59,7 @@ namespace "FNT", (exports) ->
 
     spawn: ->
       @fixed = false
-      @moveTo new Vector(@playerModel.position.x, @playerModel.position.y)
+      @moveTo(new Vector(@playerModel.position.x, @playerModel.position.y))
       
       @orbiter.setActive(false)
       @levelCollision.setActive(true)
