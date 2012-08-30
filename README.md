@@ -7,7 +7,8 @@ Dependencies
 ------------
 CAAT - visuals  
 Coffee-Physics - physics  
-Audiolet - sound 
+Audiolet - sound  
+dat-gui - some convenience UIs for development
 
 
 About
