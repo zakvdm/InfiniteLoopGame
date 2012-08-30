@@ -5,9 +5,9 @@ A simple HTML5 game written in CoffeeScript.
 
 Dependencies
 ------------
-CAAT - visuals
-Coffee-Physics - physics
-Audiolet - sound
+CAAT - visuals  
+Coffee-Physics - physics  
+Audiolet - sound 
 
 
 About
@@ -29,5 +29,5 @@ NOTE: Any new .coffee files must be manually added to the Cakefile.
 
 By
 --
-Zak van der Merwe
+Zak van der Merwe  
 http://about.zakvdm.org
